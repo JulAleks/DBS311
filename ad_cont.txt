@@ -1,0 +1,15 @@
+
+--q3 
+SELECT
+    last_name,
+    salary,
+    job_id,
+    NVL(TO_CHAR(manager_id), 'NONE') as manager#,
+    TO_CHAR((salary*12)+ 1000, '$999,999.99') AS total_annual_pay
+FROM employees
+WHERE commission_pct IS NULL
+    OR UPPER(job_id) LIKE 'SA%'
+    AND ((salary+1000) + (salary * NVL(commission_pct,0))) > 15000
+ORDER BY
+    total_annual_pay DESC,
+    last_name;
