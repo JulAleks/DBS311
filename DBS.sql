@@ -20,6 +20,31 @@ ORDER BY
     hire_date DESC;
 
 
+--Q2
+CREATE OR REPLACE VIEW newSal AS
+SELECT 
+    'Employees with increased Pay' AS "heading",
+    'Emp# ' || m.employee_id || ' named ' || m.first_name || ' ' || m.last_name || ' who is ' || m.job_id || ' will have a new salary of $' || 
+    (CASE WHEN m.job_id LIKE '%VP' THEN (m.salary * 1.25) ELSE (m.salary * 1.18) END) AS "sample line"
+FROM
+    employees e
+JOIN
+    employees m ON e.manager_id = m.employee_id
+WHERE m.job_id NOT LIKE '%PRES' 
+    AND (m.salary < 6500 OR m.salary > 11500)
+ORDER BY 
+    e.salary DESC,
+    m.last_name;
+
+SELECT DISTINCT * FROM newSal;
+
+--DROP VIEW newSal;
+--Q3
+
+
+
+
+
 
 
 

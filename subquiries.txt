@@ -1,0 +1,50 @@
+--salaries that earn less or more 6500-11500
+SELECT
+    salary
+FROM
+    employees
+WHERE
+    salary NOT BETWEEN 6500 AND 11500;
+
+
+
+--getting all employee ids of those people
+SELECT
+    employee_id
+FROM
+    employees
+WHERE
+    salary IN (SELECT
+    salary
+FROM
+    employees
+WHERE
+    salary NOT BETWEEN 6500 AND 11500);
+
+--showing all managers without the president 
+SELECT DISTINCT
+    m.employee_id
+FROM
+    employees e
+JOIN
+    employees m ON e.manager_id = m.employee_id
+WHERE m.job_id NOT LIKE '%PRES';
+
+--showing just vps
+SELECT DISTINCT
+    m.employee_id
+FROM
+    employees e
+JOIN
+    employees m ON e.manager_id = m.employee_id
+WHERE m.job_id NOT LIKE '%PRES' AND m.job_id LIKE '%VP';
+
+
+--SHOWING ALL MANAGERS BUT VP
+SELECT DISTINCT
+    m.employee_id
+FROM
+    employees e
+JOIN
+    employees m ON e.manager_id = m.employee_id
+WHERE m.job_id NOT LIKE '%PRES' AND m.job_id NOT LIKE '%VP';
