@@ -13,3 +13,35 @@ WHERE commission_pct IS NULL
 ORDER BY
     total_annual_pay DESC,
     last_name;
+
+--q7
+SELECT
+    SUBSTR(UPPER(SUBSTR(first_name,0,1))||  SUBSTR(first_name, 2) || ' ' || UPPER(SUBSTR(last_name,0,1))||  SUBSTR(last_name, 2),0,24) AS full_name,
+    job_id,
+    LPAD(TO_CHAR(TO_CHAR(salary, '$999,999')), 15, '=') AS salary,
+    department_id
+FROM employees
+WHERE salary + (salary * NVL(commission_pct,0)) < (
+    SELECT 
+        MAX(salary + (salary * NVL(commission_pct,0)))
+    FROM
+        employees e
+    WHERE employee_id IN (
+        SELECT
+            employee_id
+        FROM employees
+        WHERE employee_id NOT IN(
+            SELECT 
+                m.employee_id
+            FROM employees e
+                JOIN employees m ON e.manager_id = m.employee_id
+            UNION
+            SELECT
+                employee_id
+            FROM employees
+            WHERE job_id LIKE 'AD%'
+        )
+    )
+)
+ORDER BY
+    full_name ASC;
