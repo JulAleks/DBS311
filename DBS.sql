@@ -8,9 +8,9 @@ Audrey Duzon, 019153147
 --Q1
 SELECT 
     employee_id,
-    RPAD(SUBSTR(last_name || ', ' || first_name, 1, 25), 25) AS "FullName",
+    RPAD(SUBSTR(last_name || ', ' || first_name, 1, 25), 25) AS full_Name,
     job_id,
-    '[' || TO_CHAR(LAST_DAY(ADD_MONTHS(hire_date, 1) - 1), 'Mon DDth "of" YYYY') || ']' AS "HireDate"
+    '[' || TO_CHAR(LAST_DAY(ADD_MONTHS(hire_date, 1) - 1), 'Mon DDth "of" YYYY') || ']' AS hire_Date
 FROM
     employees
 WHERE
@@ -31,7 +31,8 @@ FROM (
         m.first_name,
         m.last_name,
         m.job_id,
-        m.salary
+        m.salary,
+        TO_CHAR(m.salary, '$999,999.99') AS total_annual_pay
     FROM employees e
     JOIN employees m ON e.manager_id = m.employee_id
     WHERE m.job_id NOT LIKE '%PRES' 
@@ -57,14 +58,33 @@ ORDER BY
 
 
 --Q4
-
-
-
+SELECT
+    e.department_id, 
+    d.department_name,
+    e.employee_id, 
+    e.job_id,
+    TO_CHAR(MIN(e.salary), '$999,999.99')AS "Lowest Dept/Job Pay"
+FROM employees e
+JOIN departments d ON e.department_id = d.department_id
+WHERE e.job_id NOT LIKE 'IT%' AND e.job_id NOT LIKE '%REP' AND e.job_id NOT LIKE 'SA%'
+GROUP BY 
+    e.department_id, e.employee_id, e.job_id, d.department_name
+HAVING 
+    MIN(e.salary) BETWEEN 6500 AND 16800
+ORDER BY 
+    e.department_id, e.job_id;
+    
 --Q5
 
 
 
+
+
+
 --Q6
+
+
+
 
 
 
@@ -101,10 +121,23 @@ ORDER BY
     full_name ASC;
 --Q8
 
-
-
-
-
-
-
+SELECT 
+    COALESCE(d.department_name, 'Not Assigned Yet') AS Department,
+    COALESCE(SUBSTR(l.city, 1, 22), 'Not Assigned Yet') AS City,
+    COALESCE(e.job_id, 'No employees') AS Department,
+    COUNT(DISTINCT e.job_id) AS "# of Jobs"
+FROM
+    employees e
+FULL OUTER JOIN
+    departments d ON e.department_id = d.department_id
+FULL OUTER JOIN
+    locations l ON d.location_id = l.location_id
+GROUP BY
+    COALESCE(d.department_name, 'Not Assigned Yet'),
+    COALESCE(SUBSTR(l.city, 1, 22), 'Not Assigned Yet'),
+    COALESCE(e.job_id, 'No employees')
+ORDER BY
+"# of Jobs",
+    COALESCE(d.department_name, 'Not Assigned Yet'),
+    City;
 
