@@ -21,26 +21,85 @@ ORDER BY
 
 
 --Q2
-CREATE OR REPLACE VIEW newSal AS
-SELECT 
+SELECT
     'Employees with increased Pay' AS "heading",
-    'Emp# ' || m.employee_id || ' named ' || m.first_name || ' ' || m.last_name || ' who is ' || m.job_id || ' will have a new salary of $' || 
-    (CASE WHEN m.job_id LIKE '%VP' THEN (m.salary * 1.25) ELSE (m.salary * 1.18) END) AS "sample line"
-FROM
-    employees e
-JOIN
-    employees m ON e.manager_id = m.employee_id
-WHERE m.job_id NOT LIKE '%PRES' 
-    AND (m.salary < 6500 OR m.salary > 11500)
-ORDER BY 
-    e.salary DESC,
-    m.last_name;
+    'Emp# ' || d.employee_id || ' named ' || d.first_name || ' ' || d.last_name || ' who is ' || d.job_id || ' will have a new salary of $' || 
+    (CASE WHEN d.job_id LIKE '%VP' THEN (d.salary * 1.25) ELSE (d.salary * 1.18) END) AS "sample line"
+FROM (
+    SELECT DISTINCT
+        m.employee_id,
+        m.first_name,
+        m.last_name,
+        m.job_id,
+        m.salary
+    FROM employees e
+    JOIN employees m ON e.manager_id = m.employee_id
+    WHERE m.job_id NOT LIKE '%PRES' 
+        AND (m.salary < 6500 OR m.salary > 11500)
+) d
+ORDER BY d.employee_id;
 
-SELECT DISTINCT * FROM newSal;
-
---DROP VIEW newSal;
 --Q3
 
+SELECT
+    last_name,
+    salary,
+    job_id,
+    NVL(TO_CHAR(manager_id), 'NONE') as manager#,
+    TO_CHAR((salary*12)+ 1000, '$999,999.99') AS total_annual_pay
+FROM employees
+WHERE commission_pct IS NULL
+    OR UPPER(job_id) LIKE 'SA%'
+    AND ((salary+1000) + (salary * NVL(commission_pct,0))) > 15000
+ORDER BY
+    total_annual_pay DESC,
+    last_name;
+
+
+--Q4
+
+
+
+--Q5
+
+
+
+--Q6
+
+
+
+--Q7
+SELECT
+    SUBSTR(UPPER(SUBSTR(first_name,0,1))||  SUBSTR(first_name, 2) || ' ' || UPPER(SUBSTR(last_name,0,1))||  SUBSTR(last_name, 2),0,24) AS full_name,
+    job_id,
+    LPAD(TO_CHAR(TO_CHAR(salary, '$999,999')), 15, '=') AS salary,
+    department_id
+FROM employees
+WHERE salary + (salary * NVL(commission_pct,0)) < (
+    SELECT 
+        MAX(salary + (salary * NVL(commission_pct,0)))
+    FROM
+        employees e
+    WHERE employee_id IN (
+        SELECT
+            employee_id
+        FROM employees
+        WHERE employee_id NOT IN(
+            SELECT 
+                m.employee_id
+            FROM employees e
+                JOIN employees m ON e.manager_id = m.employee_id
+            UNION
+            SELECT
+                employee_id
+            FROM employees
+            WHERE job_id LIKE 'AD%'
+        )
+    )
+)
+ORDER BY
+    full_name ASC;
+--Q8
 
 
 
