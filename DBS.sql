@@ -75,7 +75,35 @@ ORDER BY
     e.department_id, e.job_id;
     
 --Q5
-
+SELECT 
+    -- employee_id,
+    last_name,
+    salary,
+    -- salary*(1+NVL(commission_pct,0)) AS "MORE THAN MIN-PAID PER DEPT",
+    -- e1.department_id
+    job_id
+FROM employees e1
+    LEFT JOIN departments d ON e1.department_id = d.department_id
+    LEFT JOIN locations l ON d.location_id = l.location_id
+    LEFT JOIN countries c ON l.country_id = c.country_id -- ENSURE SELECTING ALL EMPS
+WHERE salary*(1+NVL(commission_pct,0)) NOT IN ( -- INVERSE SELECTION: NOT LOWEST PAID.
+    SELECT MIN(salary*(1+NVL(commission_pct,0))) AS "MIN-PAID"
+    FROM employees e2
+    WHERE e1.department_id = e2.department_id
+    GROUP BY department_id
+    ) 
+    AND UPPER(e1.job_id) NOT IN ('AD_PRES', 'AD_VP')
+    AND UPPER(c.country_id) NOT IN ('US')
+ORDER BY JOB_ID;
+-- US: 
+-- = location_id IN (1700, 1600, 1500, 1400)
+-- = department_id IN (10, 50, 60, 90, 110, 190)
+-- ANS WILL ONLY INCLUDE DEPARTMENT IN (20, 80)
+-- department_id (20, 80):
+-- 80: Zlotkey, Abel (Exclude LOWEST PAID EMP: Taylor)
+-- 20: Hartstein (Exclude LOWEST PAID EMP: Fay)
+-- O/P:
+-- Hartstein, Zlotkey, Abel
 
 
 
