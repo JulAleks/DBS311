@@ -76,11 +76,8 @@ ORDER BY
     
 --Q5
 SELECT 
-    -- employee_id,
     last_name,
     salary,
-    -- salary*(1+NVL(commission_pct,0)) AS "MORE THAN MIN-PAID PER DEPT",
-    -- e1.department_id
     job_id
 FROM employees e1
     LEFT JOIN departments d ON e1.department_id = d.department_id
@@ -99,21 +96,30 @@ ORDER BY JOB_ID;
 -- = location_id IN (1700, 1600, 1500, 1400)
 -- = department_id IN (10, 50, 60, 90, 110, 190)
 -- ANS WILL ONLY INCLUDE DEPARTMENT IN (20, 80)
--- department_id (20, 80):
--- 80: Zlotkey, Abel (Exclude LOWEST PAID EMP: Taylor)
--- 20: Hartstein (Exclude LOWEST PAID EMP: Fay)
+-- Dept 80 staff: Zlotkey, Abel (Exclude LOWEST PAID EMP: Taylor)
+-- Dept 20 staff: Hartstein (Exclude LOWEST PAID EMP: Fay)
 -- O/P:
 -- Hartstein, Zlotkey, Abel
 
 
-
-
-
---Q6
-
-
-
-
+-- Q6
+SELECT
+    last_name,
+    salary,
+    job_id
+FROM employees e
+WHERE (salary*(1+NVL(commission_pct, 0))) > (
+    SELECT MIN(salary*(1+NVL(commission_pct, 0))) AS MIN_PAY_ACCT -- SINGLE VALUE (LEAST PAID)
+    FROM employees
+    WHERE department_id = 110
+    GROUP BY department_id
+    )
+    AND e.department_id IN (20, 60);
+-- ANS:
+-- LEAST PAID IN ACCT (dept_id: 110): $8300
+-- IT (dept_id: 60) staff: Hunold ($9000), esnst ($6000), Lorentz ($4200)
+-- MRK (dept_id: 20) staff: Hartstein ($13000), Fay ($6000)
+-- O/P: Hartstein ($13000), Hunold (9000)
 
 
 --Q7
