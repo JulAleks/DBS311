@@ -39,8 +39,12 @@ FROM (
     WHERE m.job_id NOT LIKE '%PRES' 
         AND (m.salary < 6500 OR m.salary > 11500)
 ) d
-ORDER BY d.employee_id;
-
+--ORDER BY d.employee_id;
+--sort by top salaries first
+ORDER BY 
+    salary DESC;
+    
+    
 --Q3
 
 SELECT
@@ -55,7 +59,7 @@ WHERE commission_pct IS NULL
     AND ((salary+1000) + (salary * NVL(commission_pct,0))) > 15000
 ORDER BY
     total_annual_pay DESC,
-    last_name;
+    UPPER(last_name);
 
 
 --Q4
@@ -73,7 +77,8 @@ GROUP BY
 HAVING 
     MIN(e.salary) BETWEEN 6500 AND 16800
 ORDER BY 
-    e.department_id, e.job_id;
+    e.department_id, 
+    e.job_id;
     
 --Q5
 SELECT 
@@ -115,7 +120,8 @@ WHERE (salary*(1+NVL(commission_pct, 0))) > (
     WHERE department_id = 110
     GROUP BY department_id
     )
-    AND e.department_id IN (20, 60);
+    AND e.department_id IN (20, 60)
+ORDER BY UPPER(last_name);
 -- ANS:
 -- LEAST PAID IN ACCT (dept_id: 110): $8300
 -- IT (dept_id: 60) staff: Hunold ($9000), esnst ($6000), Lorentz ($4200)
