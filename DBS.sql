@@ -21,12 +21,13 @@ WHERE
 ORDER BY
     hire_date DESC;
 */
+
+-- Q1 After Modify:
 SELECT 
     employee_id,
-    RPAD(SUBSTR(last_name || ', ' || first_name, 1, 25), 25) AS Fullname, -- Nicole: I think we might not need rpad(25) as padding 25 characters is not required, we only need to limit the word count of fullname
+    SUBSTR(last_name || ', ' || first_name, 1, 25) AS Fullname, -- Nicole: I think we might not need rpad(25) as padding 25 characters is not required, we only need to limit the word count of fullname
     job_id,
-    -- '[' || TO_CHAR(LAST_DAY(ADD_MONTHS(hire_date, 1) - 1), 'Mon DDth "of" YYYY') || ']' AS hire_Date
-    TO_CHAR(LAST_DAY(hire_date), '[Month ddth "of" YYYY]') AS "Start Date" -- Nicole
+    TO_CHAR(LAST_DAY(hire_date), '[Month ddth "of" YYYY]') AS "Start Date"
 FROM employees
 WHERE
     EXTRACT(MONTH FROM hire_date) IN (5, 11) AND
