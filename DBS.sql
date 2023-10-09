@@ -7,6 +7,7 @@ Audrey Duzon, 019153147
 **********************************/
 
 --Q1
+/*
 SELECT 
     employee_id,
     RPAD(SUBSTR(last_name || ', ' || first_name, 1, 25), 25) AS full_Name,
@@ -19,9 +20,23 @@ WHERE
     EXTRACT(YEAR FROM hire_date) NOT IN ('2015', '2016')
 ORDER BY
     hire_date DESC;
+*/
+SELECT 
+    employee_id,
+    RPAD(SUBSTR(last_name || ', ' || first_name, 1, 25), 25) AS Fullname, -- Nicole: I think we might not need rpad(25) as padding 25 characters is not required, we only need to limit the word count of fullname
+    job_id,
+    -- '[' || TO_CHAR(LAST_DAY(ADD_MONTHS(hire_date, 1) - 1), 'Mon DDth "of" YYYY') || ']' AS hire_Date
+    TO_CHAR(LAST_DAY(hire_date), '[Month ddth "of" YYYY]') AS "Start Date" -- Nicole
+FROM employees
+WHERE
+    EXTRACT(MONTH FROM hire_date) IN (5, 11) AND
+    EXTRACT(YEAR FROM hire_date) NOT IN ('2015', '2016')
+ORDER BY
+    hire_date DESC;
 
-
+---------------------------------------------------------------------------------------------------
 --Q2
+/*
 SELECT
     'Employees with increased Pay' AS "heading",
     'Emp# ' || d.employee_id || ' named ' || d.first_name || ' ' || d.last_name || ' who is ' || d.job_id || ' will have a new salary of $' || 
@@ -43,10 +58,49 @@ FROM (
 --sort by top salaries first
 ORDER BY 
     salary DESC;
-    
-    
---Q3
+*/
 
+-- Q2 Original Modified:
+SELECT
+    'Emp# ' || employee_id || ' named ' || first_name || ' ' || last_name || ' who is ' || job_id || ' will have a new salary of $' || 
+    (CASE 
+        WHEN UPPER(job_id) LIKE '%VP' THEN (salary * 1.25) -- TO UPPER
+        ELSE (salary * 1.18) 
+    END) AS "Employees with increased Pay"
+FROM (
+    SELECT DISTINCT
+        m.employee_id,
+        m.first_name,
+        m.last_name,
+        m.job_id,
+        m.salary
+        -- TO_CHAR(m.salary, '$999,999.99') AS total_annual_pay -- NOT USED
+    FROM employees e
+        JOIN employees m ON e.manager_id = m.employee_id
+    WHERE m.job_id NOT LIKE '%PRES' 
+        AND (m.salary <= 6500 OR m.salary >= 11500) -- SHOULD BE >= AND <=
+    ) -- Alias 'd' not needed
+ORDER BY 
+    salary DESC;
+    
+-- OR -- Nicole
+SELECT 
+    'Emp# ' || employee_id || ' named ' || first_name || ' ' || last_name || ' who is ' || job_id || ' will have a new salary of $' || 
+    CASE 
+        WHEN UPPER(job_id) LIKE '%VP%' THEN ROUND(salary * 1.25, 2) 
+        ELSE ROUND(salary * 1.18, 2) 
+    END AS "Employees with increased Pay"
+FROM employees 
+WHERE 
+    (salary <= 6500 OR salary >= 11500) AND
+    (UPPER(job_id) LIKE '%VP%' OR UPPER(job_id) LIKE '%MAN%' OR UPPER(job_id) LIKE '%MGR%') AND
+    UPPER(job_id) NOT LIKE '%PRES%'
+ORDER BY salary DESC;
+
+---------------------------------------------------------------------------------------------------
+--Q3
+-- INCORRECT OUTPUT:
+/*
 SELECT
     last_name,
     salary,
@@ -60,8 +114,22 @@ WHERE commission_pct IS NULL
 ORDER BY
     total_annual_pay DESC,
     UPPER(last_name);
+*/
 
+-- CORRECT OUTPUT:
+SELECT
+    last_name,
+    salary,
+    job_id,
+    NVL(TO_CHAR(manager_id), 'NONE') AS Manager#,
+    TO_CHAR(((salary + (salary * NVL(commission_pct, 0)))*12 + 1000), '$9,999,999.00') AS "Total Income"
+FROM employees
+WHERE 
+    (commission_pct IS NULL OR department_id = 80) AND
+    (salary + (salary * NVL(commission_pct, 0)) + 1000) > 15000
+ORDER BY "Total Income" DESC;
 
+---------------------------------------------------------------------------------------------------
 --Q4
 SELECT
     e.department_id, 
@@ -79,8 +147,9 @@ HAVING
 ORDER BY 
     e.department_id, 
     e.job_id;
-    
---Q5
+
+---------------------------------------------------------------------------------------------------
+--Q5 [CANNOT / NEED TO ASK PROF.]
 SELECT 
     last_name,
     salary,
@@ -107,6 +176,7 @@ ORDER BY JOB_ID;
 -- O/P:
 -- Hartstein, Zlotkey, Abel
 
+-- Expected output also with employee_id: 103 and 205 (CANNOT)
 
 -- Q6
 SELECT
