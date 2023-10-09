@@ -240,6 +240,42 @@ ORDER BY job_id
 ;
 
 
+--without comission
+--final output 4, HIGHEST SAL AMONG LOWESTIS 10320
+SELECT 
+    UPPER(SUBSTR(last_name,0,1))||  SUBSTR(last_name, 2) AS last_name,
+    salary,
+    job_id
+FROM employees
+WHERE employee_id IN (
+    SELECT employee_id
+    FROM employees
+    MINUS
+    SELECT employee_id
+    FROM employees
+    WHERE job_id LIKE '%VP%'
+        OR job_id LIKE '%PRES%'
+)
+    AND salary > (
+            SELECT MAX(salary) 
+        FROM(
+            SELECT 
+                MIN(salary) salary,
+                department_id
+            FROM employees
+            WHERE department_id IN (
+                SELECT
+                    d.department_id
+                FROM departments d
+                    JOIN locations l ON d.location_id = l.location_id
+                    JOIN countries c ON l.country_id = c.country_id
+                WHERE c.country_id != 'US'
+            )
+            GROUP BY department_id
+        )
+    )
+ORDER BY job_id;
+
 -- Q6
 SELECT
     last_name,
