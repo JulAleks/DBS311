@@ -165,6 +165,81 @@ ORDER BY JOB_ID;
 
 -- Expected output also with employee_id: 103 and 205 (CANNOT)
 
+--Audrey q5 showing all employees earnign more than 10320 (highest pay amongth lowest= 6000, 10320)
+SELECT 
+    UPPER(SUBSTR(last_name,0,1))||  SUBSTR(last_name, 2) AS last_name,
+    salary,
+    job_id
+FROM employees
+WHERE employee_id IN (
+    SELECT employee_id
+    FROM employees
+    MINUS
+    SELECT employee_id
+    FROM employees
+    WHERE job_id LIKE '%VP%'
+        OR job_id LIKE '%PRES%'
+)
+    AND (salary + (NVL(commission_pct,0)* salary)) > (
+        SELECT MAX(salary) 
+        FROM(
+            SELECT 
+                MIN(salary + (NVL(commission_pct,0)* salary)) salary,
+                department_id
+            FROM employees
+            WHERE department_id IN (
+                SELECT
+                    d.department_id
+                FROM departments d
+                    JOIN locations l ON d.location_id = l.location_id
+                    JOIN countries c ON l.country_id = c.country_id
+                WHERE c.country_id != 'US'
+            )
+            GROUP BY department_id
+        )
+    )
+ORDER BY job_id;
+--hunold not included since he earns only 9000 which is less than 10320 
+--taylor not included since he earnes exactly 10320 which is exact
+
+--audrey opt 2 
+--output from the lowest paid employee ever, salary 6000, hunold included since he earns more than 6000
+SELECT 
+    UPPER(SUBSTR(last_name,0,1))||  SUBSTR(last_name, 2) AS last_name,
+    salary,
+    job_id
+FROM employees
+WHERE employee_id IN (
+    SELECT employee_id
+    FROM employees
+    MINUS
+    SELECT employee_id
+    FROM employees
+    WHERE job_id LIKE '%VP%'
+        OR job_id LIKE '%PRES%'
+)
+    AND (salary + (NVL(commission_pct,0)* salary)) > (
+            SELECT MIN(salary) 
+        FROM(
+            SELECT 
+                MIN(salary + (NVL(commission_pct,0)* salary)) salary,
+                department_id
+            FROM employees
+            WHERE department_id IN (
+                SELECT
+                    d.department_id
+                FROM departments d
+                    JOIN locations l ON d.location_id = l.location_id
+                    JOIN countries c ON l.country_id = c.country_id
+                WHERE c.country_id != 'US'
+            )
+            GROUP BY department_id
+        )
+    )
+ORDER BY job_id
+;
+
+
 -- Q6
 SELECT
     last_name,
