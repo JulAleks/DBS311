@@ -25,7 +25,8 @@ ORDER BY
 -- Q1 After Modify:
 SELECT 
     employee_id,
-    SUBSTR(last_name || ', ' || first_name, 1, 25) AS Fullname, -- Nicole: I think we might not need rpad(25) as padding 25 characters is not required, we only need to limit the word count of fullname
+    SUBSTR( UPPER(SUBSTR(last_name,0,1)) || SUBSTR(last_name, 2) || ', ' || UPPER(SUBSTR(first_name,0,1))|| SUBSTR(first_name, 2), 0,25) AS full_name, 
+    --SUBSTR(last_name || ', ' || first_name, 1, 25) AS Fullname, -- Nicole: I think we might not need rpad(25) as padding 25 characters is not required, we only need to limit the word count of fullname
     job_id,
     TO_CHAR(LAST_DAY(hire_date), '[Month ddth "of" YYYY]') AS "Start Date"
 FROM employees
@@ -34,6 +35,8 @@ WHERE
     EXTRACT(YEAR FROM hire_date) NOT IN ('2015', '2016')
 ORDER BY
     hire_date DESC;
+
+
 
 ---------------------------------------------------------------------------------------------------
 --Q2
@@ -100,24 +103,7 @@ ORDER BY salary DESC;
 
 ---------------------------------------------------------------------------------------------------
 --Q3
--- INCORRECT OUTPUT:
-/*
-SELECT
-    last_name,
-    salary,
-    job_id,
-    NVL(TO_CHAR(manager_id), 'NONE') as manager#,
-    TO_CHAR((salary*12)+ 1000, '$999,999.99') AS total_annual_pay
-FROM employees
-WHERE commission_pct IS NULL
-    OR UPPER(job_id) LIKE 'SA%'
-    AND ((salary+1000) + (salary * NVL(commission_pct,0))) > 15000
-ORDER BY
-    total_annual_pay DESC,
-    UPPER(last_name);
-*/
 
--- CORRECT OUTPUT:
 SELECT
     last_name,
     salary,
