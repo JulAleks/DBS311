@@ -6,27 +6,12 @@ Audrey Duzon, 019153147
 2023-10-06 <<================== UPDATE DATE!
 **********************************/
 
---Q1
-/*
+-- Q1
 SELECT 
     employee_id,
-    RPAD(SUBSTR(last_name || ', ' || first_name, 1, 25), 25) AS full_Name,
-    job_id,
-    '[' || TO_CHAR(LAST_DAY(ADD_MONTHS(hire_date, 1) - 1), 'Mon DDth "of" YYYY') || ']' AS hire_Date
-FROM
-    employees
-WHERE
-    EXTRACT(MONTH FROM hire_date) IN (5, 11) AND
-    EXTRACT(YEAR FROM hire_date) NOT IN ('2015', '2016')
-ORDER BY
-    hire_date DESC;
-*/
-
--- Q1 After Modify:
-SELECT 
-    employee_id,
-    SUBSTR( UPPER(SUBSTR(last_name,0,1)) || SUBSTR(last_name, 2) || ', ' || UPPER(SUBSTR(first_name,0,1))|| SUBSTR(first_name, 2), 0,25) AS full_name, 
-    --SUBSTR(last_name || ', ' || first_name, 1, 25) AS Fullname, -- Nicole: I think we might not need rpad(25) as padding 25 characters is not required, we only need to limit the word count of fullname
+  --  SUBSTR( UPPER(SUBSTR(last_name,0,1)) || SUBSTR(last_name, 2) || ', ' || UPPER(SUBSTR(first_name,0,1))|| SUBSTR(first_name, 2), 0,25) AS full_name, 
+  --  SUBSTR(last_name || ', ' || first_name, 1, 25) AS Fullname, -- Nicole: I think we might not need rpad(25) as padding 25 characters is not required, we only need to limit the word count of fullname
+      SUBSTR(INITCAP(last_name) || ', ' || INITCAP(first_name), 1, 25) AS Fullname,   --Julia: I think this should be ok, i added something becasue the lower case if bruce pissed my OCD off
     job_id,
     TO_CHAR(LAST_DAY(hire_date), '[Month ddth "of" YYYY]') AS "Start Date"
 FROM employees
@@ -36,11 +21,9 @@ WHERE
 ORDER BY
     hire_date DESC;
 
-
-
 ---------------------------------------------------------------------------------------------------
 --Q2
-/*
+
 SELECT
     'Employees with increased Pay' AS "heading",
     'Emp# ' || d.employee_id || ' named ' || d.first_name || ' ' || d.last_name || ' who is ' || d.job_id || ' will have a new salary of $' || 
@@ -62,44 +45,44 @@ FROM (
 --sort by top salaries first
 ORDER BY 
     salary DESC;
-*/
 
--- Q2 Original Modified:
-SELECT
-    'Emp# ' || employee_id || ' named ' || first_name || ' ' || last_name || ' who is ' || job_id || ' will have a new salary of $' || 
-    (CASE 
-        WHEN UPPER(job_id) LIKE '%VP' THEN (salary * 1.25) -- TO UPPER
-        ELSE (salary * 1.18) 
-    END) AS "Employees with increased Pay"
-FROM (
-    SELECT DISTINCT
-        m.employee_id,
-        m.first_name,
-        m.last_name,
-        m.job_id,
-        m.salary
-        -- TO_CHAR(m.salary, '$999,999.99') AS total_annual_pay -- NOT USED
-    FROM employees e
-        JOIN employees m ON e.manager_id = m.employee_id
-    WHERE m.job_id NOT LIKE '%PRES' 
-        AND (m.salary <= 6500 OR m.salary >= 11500) -- SHOULD BE >= AND <=
-    ) -- Alias 'd' not needed
-ORDER BY 
-    salary DESC;
+
+-- Q2 Original Modified:                WE CAN'T USE ID CASE IF IN THIS ASS 
+--SELECT
+--    'Emp# ' || employee_id || ' named ' || first_name || ' ' || last_name || ' who is ' || job_id || ' will have a new salary of $' || 
+--    (CASE 
+--        WHEN UPPER(job_id) LIKE '%VP' THEN (salary * 1.25) -- TO UPPER     //CLINT SAID WE CANNOT USE CASE 
+--        ELSE (salary * 1.18) 
+--    END) AS "Employees with increased Pay"
+--FROM (
+--    SELECT DISTINCT
+--        m.employee_id,
+--        m.first_name,
+--        m.last_name,
+--        m.job_id,
+--        m.salary
+--        -- TO_CHAR(m.salary, '$999,999.99') AS total_annual_pay -- NOT USED
+--    FROM employees e
+--        JOIN employees m ON e.manager_id = m.employee_id
+--    WHERE m.job_id NOT LIKE '%PRES' 
+--        AND (m.salary <= 6500 OR m.salary >= 11500) -- SHOULD BE >= AND <=
+--    ) -- Alias 'd' not needed
+--ORDER BY 
+--    salary DESC;
     
 -- OR -- Nicole
-SELECT 
-    'Emp# ' || employee_id || ' named ' || first_name || ' ' || last_name || ' who is ' || job_id || ' will have a new salary of $' || 
-    CASE 
-        WHEN UPPER(job_id) LIKE '%VP%' THEN ROUND(salary * 1.25, 2) 
-        ELSE ROUND(salary * 1.18, 2) 
-    END AS "Employees with increased Pay"
-FROM employees 
-WHERE 
-    (salary <= 6500 OR salary >= 11500) AND
-    (UPPER(job_id) LIKE '%VP%' OR UPPER(job_id) LIKE '%MAN%' OR UPPER(job_id) LIKE '%MGR%') AND
-    UPPER(job_id) NOT LIKE '%PRES%'
-ORDER BY salary DESC;
+--SELECT 
+--    'Emp# ' || employee_id || ' named ' || first_name || ' ' || last_name || ' who is ' || job_id || ' will have a new salary of $' || 
+--    CASE 
+--        WHEN UPPER(job_id) LIKE '%VP%' THEN ROUND(salary * 1.25, 2) 
+--        ELSE ROUND(salary * 1.18, 2) 
+--    END AS "Employees with increased Pay"
+--FROM employees 
+--WHERE 
+--    (salary <= 6500 OR salary >= 11500) AND
+--    (UPPER(job_id) LIKE '%VP%' OR UPPER(job_id) LIKE '%MAN%' OR UPPER(job_id) LIKE '%MGR%') AND
+--    UPPER(job_id) NOT LIKE '%PRES%'
+--ORDER BY salary DESC;
 
 ---------------------------------------------------------------------------------------------------
 --Q3
@@ -283,20 +266,13 @@ SELECT
     job_id
 FROM employees e
 WHERE (salary*(1+NVL(commission_pct, 0))) > (
-    SELECT MIN(salary*(1+NVL(commission_pct, 0))) AS MIN_PAY_ACCT -- SINGLE VALUE (LEAST PAID)
+    SELECT MIN(salary*(1+NVL(commission_pct, 0))) AS MIN_PAY_ACCT 
     FROM employees
     WHERE department_id = 110
     GROUP BY department_id
     )
     AND e.department_id IN (20, 60)
 ORDER BY UPPER(last_name);
--- ANS:
--- LEAST PAID IN ACCT (dept_id: 110): $8300
--- IT (dept_id: 60) staff: Hunold ($9000), esnst ($6000), Lorentz ($4200)
--- MRK (dept_id: 20) staff: Hartstein ($13000), Fay ($6000)
--- O/P: Hartstein ($13000), Hunold (9000)
-
-
 --Q7
 SELECT
     SUBSTR(UPPER(SUBSTR(first_name,0,1))||  SUBSTR(first_name, 2) || ' ' || UPPER(SUBSTR(last_name,0,1))||  SUBSTR(last_name, 2),0,24) AS full_name,
