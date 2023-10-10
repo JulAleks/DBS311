@@ -119,36 +119,12 @@ ORDER BY
     e.job_id;
 
 ---------------------------------------------------------------------------------------------------
---Q5 [CANNOT / NEED TO ASK PROF.]
-SELECT 
-    last_name,
-    salary,
-    job_id
-FROM employees e1
-    LEFT JOIN departments d ON e1.department_id = d.department_id
-    LEFT JOIN locations l ON d.location_id = l.location_id
-    LEFT JOIN countries c ON l.country_id = c.country_id -- ENSURE SELECTING ALL EMPS
-WHERE salary*(1+NVL(commission_pct,0)) NOT IN ( -- INVERSE SELECTION: NOT LOWEST PAID.
-    SELECT MIN(salary*(1+NVL(commission_pct,0))) AS "MIN-PAID"
-    FROM employees e2
-    WHERE e1.department_id = e2.department_id
-    GROUP BY department_id
-    ) 
-    AND UPPER(e1.job_id) NOT IN ('AD_PRES', 'AD_VP')
-    AND UPPER(c.country_id) NOT IN ('US')
-ORDER BY JOB_ID;
--- US: 
--- = location_id IN (1700, 1600, 1500, 1400)
--- = department_id IN (10, 50, 60, 90, 110, 190)
--- ANS WILL ONLY INCLUDE DEPARTMENT IN (20, 80)
--- Dept 80 staff: Zlotkey, Abel (Exclude LOWEST PAID EMP: Taylor)
--- Dept 20 staff: Hartstein (Exclude LOWEST PAID EMP: Fay)
--- O/P:
--- Hartstein, Zlotkey, Abel
-
--- Expected output also with employee_id: 103 and 205 (CANNOT)
-
---Audrey q5 showing all employees earnign more than 10320 (highest pay amongth lowest= 6000, 10320)
+--Q5
+Select * from employees;
+--showing all employees PAID MORE than 10320 (highest pay amongth lowest is Taylor 10320== 8600 + (8600*0.2))
+--USING PAID comparison as per clint's formula salay + salarly*commission_pct
+--Hunold earns 9000, which is less than 10320
+--taylor earns exactly 10320 which is exact and NOT GREATER THAN
 SELECT 
     UPPER(SUBSTR(last_name,0,1))||  SUBSTR(last_name, 2) AS last_name,
     salary,
@@ -182,82 +158,8 @@ WHERE employee_id IN (
         )
     )
 ORDER BY job_id;
---hunold not included since he earns only 9000 which is less than 10320 
---taylor not included since he earnes exactly 10320 which is exact
-
---audrey opt 2 
---output from the lowest paid employee ever, salary 6000, hunold included since he earns more than 6000
-SELECT 
-    UPPER(SUBSTR(last_name,0,1))||  SUBSTR(last_name, 2) AS last_name,
-    salary,
-    job_id
-FROM employees
-WHERE employee_id IN (
-    SELECT employee_id
-    FROM employees
-    MINUS
-    SELECT employee_id
-    FROM employees
-    WHERE job_id LIKE '%VP%'
-        OR job_id LIKE '%PRES%'
-)
-    AND (salary + (NVL(commission_pct,0)* salary)) > (
-            SELECT MIN(salary) 
-        FROM(
-            SELECT 
-                MIN(salary + (NVL(commission_pct,0)* salary)) salary,
-                department_id
-            FROM employees
-            WHERE department_id IN (
-                SELECT
-                    d.department_id
-                FROM departments d
-                    JOIN locations l ON d.location_id = l.location_id
-                    JOIN countries c ON l.country_id = c.country_id
-                WHERE c.country_id != 'US'
-            )
-            GROUP BY department_id
-        )
-    )
-ORDER BY job_id
-;
 
 
---without comission
---final output 4, HIGHEST SAL AMONG LOWESTIS 10320
-SELECT 
-    UPPER(SUBSTR(last_name,0,1))||  SUBSTR(last_name, 2) AS last_name,
-    salary,
-    job_id
-FROM employees
-WHERE employee_id IN (
-    SELECT employee_id
-    FROM employees
-    MINUS
-    SELECT employee_id
-    FROM employees
-    WHERE job_id LIKE '%VP%'
-        OR job_id LIKE '%PRES%'
-)
-    AND salary > (
-            SELECT MAX(salary) 
-        FROM(
-            SELECT 
-                MIN(salary) salary,
-                department_id
-            FROM employees
-            WHERE department_id IN (
-                SELECT
-                    d.department_id
-                FROM departments d
-                    JOIN locations l ON d.location_id = l.location_id
-                    JOIN countries c ON l.country_id = c.country_id
-                WHERE c.country_id != 'US'
-            )
-            GROUP BY department_id
-        )
-    )
-ORDER BY job_id;
 
 -- Q6
 SELECT
@@ -273,7 +175,10 @@ WHERE (salary*(1+NVL(commission_pct, 0))) > (
     )
     AND e.department_id IN (20, 60)
 ORDER BY UPPER(last_name);
+
 --Q7
+--showing all employees earning more than the BEST PAID unionized worker
+--AND only if they work in sales or marketing, AND NOT PRES or MANAGER
 SELECT
     SUBSTR(UPPER(SUBSTR(first_name,0,1))||  SUBSTR(first_name, 2) || ' ' || UPPER(SUBSTR(last_name,0,1))||  SUBSTR(last_name, 2),0,24) AS full_name,
     job_id,
@@ -302,8 +207,12 @@ WHERE salary + (salary * NVL(commission_pct,0)) < (
         )
     )
 )
+AND job_id LIKE 'SA%'
+    OR job_id LIKE 'MK%'
 ORDER BY
     full_name ASC;
+    
+    
 --Q8
 
 SELECT 
