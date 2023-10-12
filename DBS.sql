@@ -24,6 +24,20 @@ ORDER BY
 ---------------------------------------------------------------------------------------------------
 --Q2
 
+SELECT 
+    'Emp# ' || employee_id || ' named ' || first_name || ' ' || last_name || ' who is ' || job_id || ' will have a new salary of $' || 
+    CASE 
+        WHEN UPPER(job_id) LIKE '%VP%' THEN ROUND(salary * 1.25, 2) 
+        ELSE ROUND(salary * 1.18, 2) 
+    END AS "Employees with increased Pay"
+FROM employees 
+WHERE 
+    (salary <= 6500 OR salary >= 11500) AND
+    (UPPER(job_id) LIKE '%VP%' OR UPPER(job_id) LIKE '%MAN%' OR UPPER(job_id) LIKE '%MGR%') AND
+    UPPER(job_id) NOT LIKE '%PRES%'
+ORDER BY salary DESC;
+
+/*
 SELECT
     'Employees with increased Pay' AS "heading",
     'Emp# ' || d.employee_id || ' named ' || d.first_name || ' ' || d.last_name || ' who is ' || d.job_id || ' will have a new salary of $' || 
@@ -45,7 +59,7 @@ FROM (
 --sort by top salaries first
 ORDER BY 
     salary DESC;
-
+*/
 
 -- Q2 Original Modified:                WE CAN'T USE ID CASE IF IN THIS ASS 
 --SELECT
@@ -69,20 +83,6 @@ ORDER BY
 --    ) -- Alias 'd' not needed
 --ORDER BY 
 --    salary DESC;
-    
--- OR -- Nicole
---SELECT 
---    'Emp# ' || employee_id || ' named ' || first_name || ' ' || last_name || ' who is ' || job_id || ' will have a new salary of $' || 
---    CASE 
---        WHEN UPPER(job_id) LIKE '%VP%' THEN ROUND(salary * 1.25, 2) 
---        ELSE ROUND(salary * 1.18, 2) 
---    END AS "Employees with increased Pay"
---FROM employees 
---WHERE 
---    (salary <= 6500 OR salary >= 11500) AND
---    (UPPER(job_id) LIKE '%VP%' OR UPPER(job_id) LIKE '%MAN%' OR UPPER(job_id) LIKE '%MGR%') AND
---    UPPER(job_id) NOT LIKE '%PRES%'
---ORDER BY salary DESC;
 
 ---------------------------------------------------------------------------------------------------
 --Q3
@@ -117,6 +117,22 @@ HAVING
 ORDER BY 
     e.department_id, 
     e.job_id;
+    
+    
+-- Nicole: Do not need to join.
+SELECT
+    department_id,
+    job_id,
+      TO_CHAR(MIN(salary), '$999,999.99')AS "Lowest Dept/Job Pay"
+FROM employees
+WHERE UPPER(job_id) NOT LIKE ('%REP%') AND department_id NOT IN(60,80)
+GROUP BY 
+    department_id, 
+    job_id
+HAVING MIN(salary) BETWEEN 6500 AND 16800
+ORDER BY
+    department_id, 
+    job_id;
 
 ---------------------------------------------------------------------------------------------------
 --Q5
