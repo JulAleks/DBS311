@@ -29,9 +29,9 @@ SELECT
     END AS "Employees with increased Pay"
 FROM employees 
 WHERE 
-    (salary <= 6500 OR salary >= 11500) AND
-    (UPPER(job_id) LIKE '%VP%' OR UPPER(job_id) LIKE '%MAN%' OR UPPER(job_id) LIKE '%MGR%') AND
-    UPPER(job_id) NOT LIKE '%PRES%'
+    (salary <= 6500 OR salary >= 11500) 
+    AND (UPPER(job_id) LIKE '%VP%' OR UPPER(job_id) LIKE '%MAN%' OR UPPER(job_id) LIKE '%MGR%') 
+    AND UPPER(job_id) NOT LIKE '%PRES%'
 ORDER BY salary DESC;
 
 ---------------------------------------------------------------------------------------------------
