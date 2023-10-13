@@ -114,6 +114,8 @@ ORDER BY job_id;
 
 -- Q6
 --no joins allowed
+--worst paid == 8300
+--return only if employee dep in 60 || 20
 SELECT
     last_name,
     salary,
@@ -127,6 +129,7 @@ WHERE (salary*(1+NVL(commission_pct, 0))) > (
     )
     AND e.department_id IN (20, 60)
 ORDER BY UPPER(last_name);
+
 
 --Q7
 --showing all employees earning less than the BEST PAID unionized worker (value == 14300)
