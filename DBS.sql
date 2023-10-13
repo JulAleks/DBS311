@@ -103,40 +103,6 @@ WHERE employee_id IN (
         )
     )
 ORDER BY job_id ASC;
-
--- SOLUTION 2: USING ALL - 4 OUTPUT
-SELECT 
-    last_name,
-    salary,
-    job_id
-FROM employees
-WHERE salary*(1+NVL(commission_pct,0)) > 
-    ALL ( 
-    SELECT MIN(salary*(1+NVL(commission_pct,0)))
-    FROM employees e
-        JOIN departments d ON e.department_id = d.department_id
-        JOIN locations l ON d.location_id = l.location_id
-    WHERE UPPER(l.country_id) NOT LIKE 'US'
-    GROUP BY e.department_id
-    )
-    AND UPPER(job_id) NOT LIKE '%PRES' AND UPPER(job_id) NOT LIKE '%VP';
-    
--- SOLUTION 3: 5 OUTPUT NOT COMPARING PAID BUT SALARY ONLY
-SELECT 
-    last_name,
-    salary,
-    job_id
-FROM employees
-WHERE salary > 
-    ALL ( 
-    SELECT MIN(salary)
-    FROM employees e
-        JOIN departments d ON e.department_id = d.department_id
-        JOIN locations l ON d.location_id = l.location_id
-    WHERE UPPER(l.country_id) NOT LIKE 'US'
-    GROUP BY e.department_id
-    )
-    AND UPPER(job_id) NOT LIKE '%PRES' AND UPPER(job_id) NOT LIKE '%VP';
     
 ---------------------------------------------------------------------------------------------------
 -- Q6
