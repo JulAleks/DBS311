@@ -185,23 +185,3 @@ null: 1 -> /
 20: 2   -> 1800 -> Toronto
 110: 2  -> 1700 -> Seattle
 */
-
--- INCORRECT OUTPUT: check with San Francisco, it should be 2
-/*
-SELECT 
-    COALESCE(d.department_name, 'Not Assigned Yet') AS Department,
-    COALESCE(SUBSTR(l.city, 1, 22), 'Not Assigned Yet') AS City,
-    COALESCE(e.job_id, 'No employees') AS Department,
-    COUNT(DISTINCT e.job_id) AS "# of Jobs"
-FROM employees e
-    FULL OUTER JOIN departments d ON e.department_id = d.department_id
-    FULL OUTER JOIN locations l ON d.location_id = l.location_id
-GROUP BY
-    COALESCE(d.department_name, 'Not Assigned Yet'),
-    COALESCE(SUBSTR(l.city, 1, 22), 'Not Assigned Yet'),
-    COALESCE(e.job_id, 'No employees')
-ORDER BY
-    "# of Jobs",
-    COALESCE(d.department_name, 'Not Assigned Yet'),
-    City;
-*/
