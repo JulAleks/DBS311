@@ -157,6 +157,24 @@ ORDER BY Employee ASC;
     
 ---------------------------------------------------------------------------------------------------
 --Q8
+SELECT
+    COALESCE(d.department_name, 'NO department') AS "Department Name",
+    COALESCE(SUBSTR(l.city, 1, 22), 'Not Assigned Yet') AS City,
+    COUNT(DISTINCT e.job_id) AS "# of Jobs"
+FROM
+    employees e
+    FULL OUTER JOIN departments d ON e.department_id = d.department_id
+    FULL OUTER JOIN locations l ON d.location_id = l.location_id
+GROUP BY
+    COALESCE(d.department_name, 'NO department'),
+    City
+ORDER BY 
+    "# of Jobs" DESC,
+    "Department Name",
+    City;
+    
+-- INCORRECT OUTPUT: check with San Francisco, it should be 2
+/*
 SELECT 
     COALESCE(d.department_name, 'Not Assigned Yet') AS Department,
     COALESCE(SUBSTR(l.city, 1, 22), 'Not Assigned Yet') AS City,
@@ -173,3 +191,4 @@ ORDER BY
     "# of Jobs",
     COALESCE(d.department_name, 'Not Assigned Yet'),
     City;
+*/
