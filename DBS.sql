@@ -173,6 +173,19 @@ ORDER BY
     "Department Name",
     City;
     
+/*
+Q8 ANS CHECK:
+190: 0  -> 1700 -> Seattle
+90: 2   -> 1700 -> Seattle
+60: 1   -> 1400 -> South
+50: 2   -> 1500 -> San F.
+80: 2   -> 2500 -> Oxford
+null: 1 -> /
+10: 1   -> 1700 -> Seattle
+20: 2   -> 1800 -> Toronto
+110: 2  -> 1700 -> Seattle
+*/
+
 -- INCORRECT OUTPUT: check with San Francisco, it should be 2
 /*
 SELECT 
