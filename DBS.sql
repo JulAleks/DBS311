@@ -168,7 +168,7 @@ AND job_id LIKE 'SA%'
 ORDER BY
     full_name ASC;
     
-    
+
 --Q8
 
 SELECT 
