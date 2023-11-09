@@ -1,0 +1,6 @@
+Success : 0
+Generic Error : -1
+Insert Error : -2
+Update Error : -3
+Delete Error : -4
+No Data Found Error: -5
