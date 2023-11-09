@@ -398,10 +398,14 @@ SELECT
     p.isActive AS pIsActive,
     r.playerid AS rPlayerID,
     r.rosterid AS rosterID,
-    r.teamid AS teamID,
-    r.isActive AS rosterIsActive
+    r.teamid AS rTeamID,
+    r.isActive AS rosterIsActive,
+    t.teamname AS teamName,
+    t.isActive AS tIsActive,
+    t.jerseycolour AS tJerseycolour
 FROM players p
-INNER JOIN rosters r ON p.playerid = r.playerid AND r.isActive = 1;
+INNER JOIN rosters r ON p.playerid = r.playerid AND r.isActive = 1
+INNER JOIN teams t ON r.teamid = t.teamid;
 /
 /******************************
          QUESTION 5
@@ -410,21 +414,20 @@ CREATE OR REPLACE PROCEDURE spTeamRosterByID(
     pTeamID IN NUMBER
 ) AS
 BEGIN
-    
     FOR tTeamRoster IN (
         SELECT *
         FROM vwPlayerRosters
-        WHERE teamID = pTeamID
+        WHERE rTeamID = pTeamID  
     ) LOOP
         DBMS_OUTPUT.PUT_LINE(RPAD('-', 40, '-'));
-        DBMS_OUTPUT.PUT_LINE('Team ID: ' || tteamroster.teamid);
-        DBMS_OUTPUT.PUT_LINE('Roster ID: ' || tteamroster.rosterid);
-        DBMS_OUTPUT.PUT_LINE('Player Name: ' || tTeamRoster.pFirstname || ' ' || tTeamRoster.pLastname);
+        DBMS_OUTPUT.PUT_LINE('Team Name: ' || tTeamRoster.teamName);  
+        DBMS_OUTPUT.PUT_LINE('Roster ID: ' || tTeamRoster.rosterID);  
+        DBMS_OUTPUT.PUT_LINE('Player Name: ' || tTeamRoster.pFirstName || ' ' || tTeamRoster.pLastName); 
         DBMS_OUTPUT.PUT_LINE(RPAD('-', 40, '-'));
     END LOOP;
 EXCEPTION
     WHEN NO_DATA_FOUND THEN
-        DBMS_OUTPUT.PUT_LINE('No team roster found for the specified teamID');   
+        DBMS_OUTPUT.PUT_LINE('No team roster found for the specified teamID');
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('An error occurred.');
 END spTeamRosterByID;
@@ -435,4 +438,39 @@ DECLARE
 BEGIN
     spTeamRosterByID(teamID);
 END;
+/
+
+
+/******************************
+         QUESTION 6
+*******************************/
+CREATE OR REPLACE PROCEDURE spTeamRosterByName(
+    tName IN VARCHAR2
+) AS
+BEGIN
+    FOR tTeamRoster IN (
+        SELECT *
+        FROM vwPlayerRosters
+        WHERE LOWER(teamName) LIKE LOWER(tName)  
+    ) LOOP
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 40, '-'));
+        DBMS_OUTPUT.PUT_LINE('Team Name: ' || tTeamRoster.teamName);  
+        DBMS_OUTPUT.PUT_LINE('Roster ID: ' || tTeamRoster.rosterID);  
+        DBMS_OUTPUT.PUT_LINE('Player Name: ' || tTeamRoster.pFirstName || ' ' || tTeamRoster.pLastName); 
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 40, '-'));
+    END LOOP;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('No team roster found for the specified team name');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An error occurred.');
+END spTeamRosterByName;
+
+--execute
+DECLARE
+    teamName VARCHAR2(25) := '&word%'; 
+BEGIN
+    spTeamRosterByName(teamName);
+END;
+
 /
