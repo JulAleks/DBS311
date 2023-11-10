@@ -1,6 +1,6 @@
 /******************************
 Group 1 - Assignment 2 - NDD
-Date: 2023-11-08 ---------------------------------------TO BE CHANGED 
+Date: 2023-11-10 ---------------------------------------TO BE CHANGED 
 Julia Alekssev, 051292134
 Ka Ying Chan, 123231227
 Audrey Duzon, 019153147
@@ -474,3 +474,117 @@ BEGIN
 END;
 
 /
+
+
+-- 7.	Create a view that returns the number of players currently registered on each team, called vwTeamsNumPlayers.
+CREATE OR REPLACE VIEW vwTeamsNumPlayers AS
+    SELECT 
+        t.teamID, 
+        COUNT(p.playerid) AS NumPlayers
+    FROM players p
+        RIGHT JOIN rosters r ON r.playerid = p.playerid
+        RIGHT JOIN teams t ON t.teamid = r.teamid
+    GROUP BY t.teamid;
+    
+-- Q7 Execute
+SELECT * FROM vwTeamsNumPlayers;
+
+-- 8.	Using vwTeamsNumPlayers create a user defined function, that given the team PK, will return the number of players currently registered, called fncNumPlayersByTeamID.
+CREATE OR REPLACE FUNCTION fncNumPlayersByTeamID (team INT)
+    RETURN INT IS 
+    numOfPlayer INT := 0;  -- declared variable that was never used
+BEGIN
+    SELECT NumPlayers
+    INTO numOfPlayer
+    FROM vwTeamsNumPlayers vtp
+    WHERE vtp.teamID = team;
+    
+    RETURN numOfPlayer;
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN -5;
+END fncNumPlayersByTeamID;
+
+-- Q8 Execute
+DECLARE
+    team INT;
+    res INT;
+BEGIN
+    team := 210; -- test data: 210(o/p: 18)
+    res:= fncNumPlayersByTeamID(team);
+    DBMS_OUTPUT.PUT_LINE('Number of Player in team # '|| team || ': ' || res);
+END;
+
+
+-- 9.	Create a view, called vwSchedule, 
+--      that shows all games, but includes the written names for teams and locations, in addition to the PK/FK values.  
+--      Do not worry about division here.
+CREATE OR REPLACE VIEW vwSchedule AS
+    SELECT
+        g.gameid,
+        g.divid,
+        g.gamenum,
+        g.gamedatetime,
+        g.hometeam,
+        t1.teamname AS HomeTeamName,
+        g.homescore,
+        g.visitteam,
+        t2.teamname AS VisitTeamName,
+        g.visitscore,
+        g.locationid,
+        locationname,
+        g.isplayed,
+        g.notes
+    FROM games g
+        JOIN sllocations sll ON sll.locationid = g.locationid
+        JOIN teams t1 ON g.hometeam = t1.teamid
+        JOIN teams t2 ON g.visitteam = t2.teamid;
+
+-- Q9 Execute
+SELECT * FROM vwSchedule;
+
+
+-- 10.	Create a stored procedure, spSchedUpcomingGames, using DBMS_OUTPUT, 
+--      that displays the games to be played in the next n days, 
+--      where n is an input parameter.  Make sure your code will work on any day of the year.
+CREATE OR REPLACE PROCEDURE spSchedUpcomingGames (nextGameDay INT) AS  -- games.gamedatetime%TYPE
+    matchFound BOOLEAN := FALSE;
+    e_negativeDay EXCEPTION;
+    BEGIN
+    IF nextGameDay < 0 THEN
+        RAISE e_negativeDay;
+    END IF;
+        DBMS_OUTPUT.PUT_LINE('-------------------------------------------------');
+    DBMS_OUTPUT.PUT_LINE('Display matches in the next ' || nextGameDay || ' days' );
+    FOR r IN(
+        SELECT * 
+        FROM vwSchedule s
+        WHERE s.gameDateTime BETWEEN TRUNC(SYSDATE) AND TRUNC(SYSDATE) + nextGameDay
+    )LOOP
+        matchFound := TRUE;
+        DBMS_OUTPUT.PUT_LINE(RPAD('Game ID',16) || LPAD(': ', 2) || r.gameid);
+        DBMS_OUTPUT.PUT_LINE(RPAD('Game Date-time',16) || LPAD(': ', 2) || to_char(r.gamedatetime, 'DD Month, YYYY'));
+        DBMS_OUTPUT.PUT_LINE(RPAD('Home Team',16) || LPAD(': ', 2) || r.HomeTeamName);
+        DBMS_OUTPUT.PUT_LINE(RPAD('Visit Team',16) || LPAD(': ', 2) || r.VisitTeamName);
+        DBMS_OUTPUT.PUT_LINE(RPAD('Location',16) || LPAD(': ', 2) || r.locationname);
+        DBMS_OUTPUT.PUT_LINE('');
+    END LOOP;
+        
+    IF NOT matchFound THEN 
+         DBMS_OUTPUT.PUT_LINE('No Matches Found');
+    END IF;
+    DBMS_OUTPUT.PUT_LINE('-------------------------------------------------');
+    EXCEPTION 
+        WHEN e_negativeDay THEN
+            DBMS_OUTPUT.PUT_LINE('ERROR: Input number must be > 0');
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Error: A general error occured');
+END spSchedUpcomingGames;
+
+-- Q10 Execute
+BEGIN
+    spSchedUpcomingGames(4);
+    spSchedUpcomingGames(40);
+    spSchedUpcomingGames(-1);
+END;
