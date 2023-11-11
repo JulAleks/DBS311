@@ -588,3 +588,47 @@ BEGIN
     spSchedUpcomingGames(40);
     spSchedUpcomingGames(-1);
 END;
+
+--11.Create a stored procedure, spSchedPastGames, using DBMS_OUTPUT, 
+--that displays the games that have been played in the past n days, where n is an input parameter. Make sure your code will work on any day of the year.
+CREATE OR REPLACE PROCEDURE spSchedPastGames(
+    n NUMBER
+)AS
+    matchCt number:=0;
+    date_diff DATE;
+    exp1 EXCEPTION;
+    CURSOR data_cur IS SELECT * FROM vwSchedule WHERE gamedatetime BETWEEN TO_DATE(date_diff, 'YY-MM-DD') AND TO_DATE(SYSDATE, 'YY-MM-DD');
+    --hard coding to_date cast required otherwise games where sysdate-1 is not captured, or n has to be +1
+    data_rec vwSchedule%ROWTYPE;
+BEGIN
+    IF n <=0 THEN
+        RAISE exp1;
+    END IF;
+    date_diff := SYSDATE -n;
+    OPEN data_cur;
+    LOOP
+        matchCt:= matchCt + 1;
+        FETCH data_cur INTO data_rec;
+        EXIT WHEN data_cur%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE(RPAD('Game ID',16) || LPAD(': ', 2) || data_rec.gameid);
+        DBMS_OUTPUT.PUT_LINE(RPAD('Game Date-time',16) || LPAD(': ', 2) || to_char(data_rec.gamedatetime, 'DD Month, YYYY'));
+        DBMS_OUTPUT.PUT_LINE(RPAD('Home Team',16) || LPAD(': ', 2) || data_rec.HomeTeamName);
+        DBMS_OUTPUT.PUT_LINE(RPAD('Visit Team',16) || LPAD(': ', 2) || data_rec.VisitTeamName);
+        DBMS_OUTPUT.PUT_LINE(RPAD('Location',16) || LPAD(': ', 2) || data_rec.locationname);
+        DBMS_OUTPUT.PUT_LINE('');
+    END LOOP;
+    CLOSE data_cur;
+    IF matchCt =0 THEN
+        DBMS_OUTPUT.PUT_LINE('No matches found between ' || TO_CHAR(date_diff, 'Mon DD, YYYY') || ' and ' || TO_CHAR(SYSDATE, 'Mon DD, YYYY'));
+    END IF;
+EXCEPTION
+WHEN INVALID_NUMBER
+    THEN  DBMS_OUTPUT.PUT_LINE('ERROR: Value entered must be a number');
+WHEN exp1
+    THEN DBMS_OUTPUT.PUT_LINE('ERROR: Must be a value greater than 0');
+END;
+
+
+BEGIN
+    spSchedPastGames(1);
+END;
