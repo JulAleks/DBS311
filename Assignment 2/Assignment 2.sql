@@ -635,16 +635,16 @@ EXCEPTION
 END spTeamRosterByName;
 
 /
---execute
 DECLARE
-    vTeamName VARCHAR2(25) := '&word%'; 
+    vTeamName VARCHAR2(25);
     cTeamRoastPlayer SYS_REFCURSOR;
-    vTeamNameCursor VARCHAR2(25); 
-    rosterID NUMBER;        
-    fullName VARCHAR2(50); 
+    cTeamRoast VARCHAR2(25);
+    rosterID NUMBER;
+    fullName VARCHAR2(50);
     errorCode NUMBER;
 BEGIN
-    spTeamRosterByName(vTeamName, cTeamRoastPlayer, errorCode); 
+    vTeamName := '&team_name'; --get team
+    spTeamRosterByName(vTeamName, cTeamRoastPlayer, errorCode);
 
     IF errorCode = 0 THEN
         DBMS_OUTPUT.PUT_LINE('----------------------------------------');
@@ -652,14 +652,14 @@ BEGIN
         DBMS_OUTPUT.PUT_LINE('----------------------------------------');
 
         LOOP
-            FETCH cTeamRoastPlayer INTO vTeamNameCursor, rosterID, fullName;
+            FETCH cTeamRoastPlayer INTO cTeamRoast, rosterID, fullName;
             EXIT WHEN cTeamRoastPlayer%NOTFOUND;
 
             -- Display
             DBMS_OUTPUT.PUT_LINE(
-                RPAD(vTeamNameCursor, 9) || ' | ' ||
-                RPAD(TO_CHAR(rosterID), 9) || ' | ' || -- Convert rosterID to character
-                RPAD(fullName, 25) 
+                RPAD(cTeamRoast, 11) || ' | ' ||
+                RPAD(rosterID, 11) || ' | ' ||
+                RPAD(fullName, 25)
             );
         END LOOP;
 
