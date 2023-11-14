@@ -17,10 +17,10 @@ b.	UPDATE an existing record given the PK value,
 c.	DELETE an existing record given the PK value, and
 d.	SELECT return all fields in a single row from a table given a PK value.
 
-•	Name the SPs using the following guide:  spTableNameMethod (example spPlayersInsert)
-•	Do not use DBMS_OUTPUT in the procedures in any way.  If you use it for debugging purposes, make sure it is commented out in the final submission.
-•	All SPs must have appropriate exception handling specific to the method and table.
-•	Use error codes of the same type and size of the PK to return values that can be clearly determined to indicate an error (example: -1 might indicate no record was found).  
+ï¿½	Name the SPs using the following guide:  spTableNameMethod (example spPlayersInsert)
+ï¿½	Do not use DBMS_OUTPUT in the procedures in any way.  If you use it for debugging purposes, make sure it is commented out in the final submission.
+ï¿½	All SPs must have appropriate exception handling specific to the method and table.
+ï¿½	Use error codes of the same type and size of the PK to return values that can be clearly determined to indicate an error (example: -1 might indicate no record was found).  
 These should be consistent values across all SPs such that only a single table of error codes is required in the documentation.
 */
 
@@ -507,7 +507,7 @@ END;
          QUESTION 4
 *******************************/
 /*
-Create a view which stores the “players on teams” information, called vwPlayerRosters which includes all fields from players, rosters, 
+Create a view which stores the ï¿½players on teamsï¿½ information, called vwPlayerRosters which includes all fields from players, rosters, 
 and teams in a single output table.  You only need to include records that have exact matches.
 */
 
@@ -796,8 +796,15 @@ BEGIN
     spSchedUpcomingGames(-1);
 END;
 
---11.Create a stored procedure, spSchedPastGames, using DBMS_OUTPUT, 
---that displays the games that have been played in the past n days, where n is an input parameter. Make sure your code will work on any day of the year.
+
+
+/******************************
+         QUESTION 11
+*******************************/
+/*
+Create a stored procedure, spSchedPastGames, using DBMS_OUTPUT, that displays the games that have been played 
+in the past n days, where n is an input parameter.  Make sure your code will work on any day of the year.
+*/
 CREATE OR REPLACE PROCEDURE spSchedPastGames(
     n NUMBER
 )AS
@@ -833,21 +840,18 @@ WHEN INVALID_NUMBER
     THEN  DBMS_OUTPUT.PUT_LINE('ERROR: Value entered must be a number');
 WHEN exp1
     THEN DBMS_OUTPUT.PUT_LINE('ERROR: Must be a value greater than 0');
+WHEN TOO_MANY_ROWS 
+    THEN DBMS_OUTPUT.PUT_LINE('You Query resulted in too many returned rows');
+WHEN NO_DATA_FOUND 
+    THEN DBMS_OUTPUT.PUT_LINE('No data was returned by your query');
+WHEN OTHERS 
+    THEN DBMS_OUTPUT.PUT_LINE('Error!');
 END;
 
-
+-- execute
 BEGIN
     spSchedPastGames(1);
 END;
-
-/******************************
-         QUESTION 11
-*******************************/
-/*
-Create a stored procedure, spSchedPastGames, using DBMS_OUTPUT, that displays the games that have been played 
-in the past n days, where n is an input parameter.  Make sure your code will work on any day of the year.
-*/
-
 
 /******************************
          QUESTION 12
@@ -871,16 +875,62 @@ and always have up to date standings.*/
 *******************************/
 /*Each group must be creative and come up with an object (SP, UDF, or potentially trigger), 
 of your own choosing, that will be built in the database to help support the same ideals of the above objects..*/
+--spMVPperteam displays a list of top players in each team
+--teams that have no goals scored are not included
+--useful for when a club bids for a player transfer
+CREATE OR REPLACE PROCEDURE spMVPperteam AS
+CURSOR mvp_cur IS SELECT p.playerid, 
+    lastname,
+    firstname,
+    SUM(numgoals) AS goalCt,
+    g.teamid,
+    teamname
+FROM players p 
+    JOIN goalscorers g ON p.playerID = g.playerid
+    JOIN teams t ON g.teamid = t.teamid
+HAVING(SUM(numgoals)) || g.teamid IN (
+    SELECT MAX(goalCt) || teamid
+    FROM(
+        SELECT p.playerid, 
+            lastname,
+            firstname,
+            SUM(numgoals) AS goalCt,
+            teamid 
+        FROM players p JOIN goalscorers g ON p.playerID = g.playerid
+        GROUP BY p.playerid, lastname,firstname, teamid
+    )
+    GROUP BY teamid
+)
+GROUP BY p.playerid, lastname,firstname, g.teamid, teamname
+ORDER BY goalct DESC, g.teamID DESC;
+pid players.playerid%TYPE;
+lname players.lastname%TYPE;
+fname players.firstname%TYPE;
+goals goalscorers.numgoals%TYPE;
+teamID teams.teamid%TYPE;
+teamNm teams.teamname%TYPE;
+BEGIN
+DBMS_OUTPUT.PUT_LINE('List of top players: ' );
+    OPEN mvp_cur;
+    LOOP
+        FETCH mvp_cur INTO pid,lname,fname,goals,teamID,teamNm;
+        EXIT WHEN mvp_cur%NOTFOUND;
+        
+        DBMS_OUTPUT.PUT_LINE('Player ID: ' || pid || ' ' || lname || ', '|| fname );
+        DBMS_OUTPUT.PUT_LINE('Team ID: ' || teamID|| ' ' || teamNm );
+        DBMS_OUTPUT.PUT_LINE('Goals made: ' || goals);
+        DBMS_OUTPUT.PUT_LINE(' ');
+    END LOOP;
+    CLOSE mvp_cur;
+EXCEPTION
+	WHEN TOO_MANY_ROWS THEN DBMS_OUTPUT.PUT_LINE('You Query resulted in too many returned rows');
+    WHEN NO_DATA_FOUND THEN DBMS_OUTPUT.PUT_LINE('No data was returned by your query');
+    WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Error!');
+END;
 
---IDEAS
--- return the teamID of a team that won the most games in year as output
---return player who scored the most goals in a game 
---return the player that didnot score ever or the least to be fired
---return the player that scored the most goals ever to be the team leader 
--- display team id, name, game loc, date
 
-
-
-
-
+--execute
+BEGIN
+    spMVPperteam();
+END;
 
