@@ -859,6 +859,7 @@ END;
 /*Using the Standings calculation demo code provided earlier in the semester, create a Stored Procedure, 
 named spRunStandings, that replaces a temporary static table, named tempStandings, with the output of 
 the SELECT code provided.*/ 
+--v1
 CREATE OR REPLACE PROCEDURE spRunStandings(
     stand_ref_cur IN OUT SYS_REFCURSOR
 )
@@ -967,6 +968,52 @@ BEGIN
     CLOSE stand_cursor;
 END;
 
+--v2
+--create a temporary table tempStandings as per instructions
+CREATE TABLE tempStandings(
+    teamid NUMBER(38,0),
+    teamname VARCHAR2(10),
+    GP NUMBER,
+    W NUMBER,
+    L NUMBER,
+    T NUMBER,
+    PTS NUMBER,
+    GF NUMBER,
+    GA NUMBER,
+    GD NUMBER
+);
+
+CREATE OR REPLACE PROCEDURE spRunStandings(stand_ref_cur IN OUT SYS_REFCURSOR) IS
+    teamid standings.theteamid%TYPE;
+    teamname standings.teamname%TYPE;
+    GP NUMBER;
+    W NUMBER;
+    L NUMBER;
+    T NUMBER;
+    PTS NUMBER;
+    GF NUMBER;
+    GA NUMBER;
+    GD NUMBER;
+BEGIN
+    OPEN stand_ref_cur FOR SELECT * FROM standings;
+    LOOP
+        FETCH stand_ref_cur INTO teamid, teamname, GP, W, L, T, PTS, GF, GA, GD;
+        EXIT WHEN stand_ref_cur%NOTFOUND;
+        INSERT INTO tempStandings VALUES (teamid, teamname, gp, w, l, t, pts, gf, ga, gd);
+    END LOOP;
+EXCEPTION
+	WHEN TOO_MANY_ROWS THEN DBMS_OUTPUT.PUT_LINE('You Query resulted in too many returned rows');
+	WHEN NO_DATA_FOUND THEN DBMS_OUTPUT.PUT_LINE('No data was returned by your query');
+    WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Error!');
+END;
+
+--execute:
+DECLARE
+    data_c SYS_REFCURSOR;
+BEGIN
+    OPEN data_c FOR SELECT * FROM standings;
+    spRunStandings(data_c);
+END;
 
 /******************************
          QUESTION 13
@@ -974,6 +1021,7 @@ END;
 /*Following up with Step 12, create a Trigger in the system to automate the execution of the spRunStandings SP 
 when any row in the games table is updated.  Essentially meaning that software can run SELECT * FROM tempStandings; 
 and always have up to date standings.*/
+--v1
 CREATE OR REPLACE TRIGGER trgUpdateStnd
 AFTER UPDATE OR INSERT ON games
 DECLARE
@@ -1008,10 +1056,89 @@ BEGIN
     CLOSE stand_cursor;
 END;
 
+--v2
+CREATE OR REPLACE TRIGGER trgUpdateStnd
+AFTER UPDATE OR INSERT ON games
+DECLARE
+    data_c SYS_REFCURSOR;
+BEGIN
+    DELETE FROM standings;
+    INSERT INTO standings (
+    SELECT
+        TheTeamID,
+        (SELECT teamname FROM teams WHERE teamid = t.TheTeamID) AS teamname,
+        SUM(GamesPlayed) AS GP,
+        SUM(Wins) AS W,
+        SUM(Losses) AS L,
+        SUM(Ties) AS T,
+        SUM(Wins) * 3 + SUM(Ties) AS Pts,
+        SUM(GoalsFor) AS GF,
+        SUM(GoalsAgainst) AS GA,
+        SUM(GoalsFor) - SUM(GoalsAgainst) AS GD
+    FROM (
+        SELECT
+            hometeam AS TheTeamID,
+            COUNT(gameID) AS GamesPlayed,
+            SUM(homescore) AS GoalsFor,
+            SUM(visitscore) AS GoalsAgainst,
+            SUM(
+                CASE
+                    WHEN homescore > visitscore THEN 1
+                    ELSE 0
+                    END) AS Wins,
+            SUM(
+                CASE
+                    WHEN homescore < visitscore THEN 1
+                    ELSE 0
+                    END) AS Losses,
+            SUM(
+                CASE
+                    WHEN homescore = visitscore THEN 1
+                    ELSE 0
+                    END) AS Ties
+        FROM games
+        WHERE isPlayed = 1
+        GROUP BY hometeam
+        
+        UNION ALL
+        -- perspective of the visiting team     
+        SELECT
+            visitteam AS TheTeamID,
+            COUNT(gameID) AS GamesPlayed,
+            SUM(visitscore) AS GoalsFor,
+            SUM(homescore) AS GoalsAgainst,
+            SUM(
+                CASE
+                    WHEN homescore < visitscore THEN 1
+                    ELSE 0
+                    END) AS Wins,
+            SUM(
+                CASE
+                    WHEN homescore > visitscore THEN 1
+                    ELSE 0
+                    END) AS Losses,
+            SUM(
+                CASE
+                    WHEN homescore = visitscore THEN 1
+                    ELSE 0
+                    END) AS Ties
+        FROM games
+        WHERE isPlayed = 1
+        GROUP BY visitteam) t
+    GROUP BY TheTeamID    
+    );
+    DELETE tempstandings;
+    OPEN data_c FOR SELECT * FROM standings;
+    spRunStandings(data_c);
+END;
+
+--execute
 --update execute triggers the spStandings
 --ALERT: please delete ANY existing triggers for update or insert on games
 UPDATE games SET homescore = 5 WHERE gameid = 1;
 UPDATE games SET visitscore = 5 WHERE gameid = 1;
+SELECT * FROM tempstandings;
+
 
 /******************************
          QUESTION 14
