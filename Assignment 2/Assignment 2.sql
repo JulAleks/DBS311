@@ -135,11 +135,11 @@ BEGIN
         DBMS_OUTPUT.PUT_LINE('Error Code: ' || errorCode);
     END IF;
 END;
-
+/
 --test
 SELECT * FROM players
 WHERE playerID=10;
-
+/
 ------------SELECT----------------------
 CREATE OR REPLACE PROCEDURE spGetPlayerByID(pID IN NUMBER, errorCode OUT NUMBER, playerName OUT VARCHAR2, playerLastName OUT VARCHAR2, playerIsActive OUT NUMBER) AS
 BEGIN
