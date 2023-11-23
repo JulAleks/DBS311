@@ -1,6 +1,11 @@
+Exitcode:
+
 Success : 0
-Generic Error : -1
-Insert Error : -2
-Update Error : -3
-Delete Error : -4
-No Data Found Error: -5
+Generic Error           : -1
+Insert Error            : -2
+Insert existing id      : -201
+Update Error            : -3
+Delete Error            : -4
+No Data Found Error     : -5
+Too many rows returned  : -6
+Invalid input           : -7
