@@ -1,10 +1,18 @@
-/*
-DBS311 - ASSIGNMENT 2
-*/
----------------------------------------------------------------------------------------------------
+/***************************************
+    DBS311 NDD - ASSIGNMENT 2
+    INSTRUCTOR: Clint MacDonald
+    
+    GROUP 1:
+        Julia Alekssev  051292134
+        Ka Ying Chan    123231227
+        Audrey Duzon    019153147
+        
+    DATE: 2023-11-23
+/***************************************
 
 /*
-    Success : 0
+    Exit code (Error code):
+    Success                 : 0
     Generic Error           : -1
     Insert Error            : -2
     Insert existing id      : -201
@@ -13,8 +21,10 @@ DBS311 - ASSIGNMENT 2
     No Data Found Error     : -5
     Too many rows returned  : -6
     Invalid input           : -7
+    Cursor / Fetch Error    : -8
 */
----------------------------------------------------------------------------------------------------
+----------------------------------------
+
 SET SERVEROUTPUT ON;
 
 /*
@@ -71,22 +81,22 @@ END spPlayersInsert;
 /
 -- TEST 1 - MANUAL INPUT NUMBER:
 DECLARE 
-    inputID players.playerid%TYPE := 1006;
+    inputID players.playerid%TYPE := 7;
     exitcode NUMBER;
 BEGIN 
-    spPlayersInsert(inputID, 12323, 'Chan', 'Nicole', 1, exitcode);
+    spPlayersInsert(inputID, 12323, 'Cristiano', 'Ronaldo', 1, exitcode);
     DBMS_OUTPUT.PUT_LINE('Playerid: ' || inputID);
     DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
 END;
 /
-DELETE FROM players WHERE playerid = 1006;
+DELETE FROM players WHERE playerid = 7;
 
 -- TEST 2 - AUTONUMBER:
 DECLARE 
     inputID players.playerid%TYPE;
     exitcode NUMBER;
 BEGIN 
-    spPlayersInsert(inputID, 12323, 'Chan', 'Nicole', 1, exitcode);
+    spPlayersInsert(inputID, 12323, 'Cristiano', 'Ronaldo', 1, exitcode);
     DBMS_OUTPUT.PUT_LINE('Playerid: ' || inputID);
     DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
 END;
@@ -125,17 +135,17 @@ END spPlayersUpdate;
 -- TEST 1 - MODIFY DATA:
 DECLARE exitcode INT;
 BEGIN 
-    spPlayersUpdate(1006, 12323, 'Chan', 'Kaying', 0, exitcode);
+    spPlayersUpdate(7, 12323, 'Diego', 'Maradona', 0, exitcode);
     DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
 END;
 /
 SELECT * FROM players
-WHERE playerid = 1006;
+WHERE playerid = 7;
 
 -- TEST 2 - MODIFY NON-EXISTING DATA:
 DECLARE exitcode INT;
 BEGIN 
-    spPlayersUpdate(987666, 55555, 'Nahc', 'Gniyak', 1, exitcode);
+    spPlayersUpdate(987666, 55555, 'Ogeid', 'Anodaram', 1, exitcode);
     DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
 END;
 /
@@ -161,9 +171,9 @@ END spPlayersDelete;
 DECLARE
     exitcode NUMBER;
 BEGIN
-    spPlayersDelete(1006, exitcode);
+    spPlayersDelete(7, exitcode);
     DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
-    spPlayersDelete(1006, exitcode); -- NOT EXIST ANY MORE
+    spPlayersDelete(7, exitcode); -- NOT EXIST ANY MORE
     DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
 END; 
 /
@@ -196,7 +206,7 @@ DECLARE
     spRecord players%ROWTYPE;
     exitcode NUMBER;
 BEGIN
-    spPlayersSelect(1006, spRecord, exitcode);
+    spPlayersSelect(7, spRecord, exitcode);
     DBMS_OUTPUT.PUT_LINE('player id: ' || spRecord.playerid);
     DBMS_OUTPUT.PUT_LINE('player lastname: ' || spRecord.lastname);
     DBMS_OUTPUT.PUT_LINE('player firstname: ' || spRecord.firstname);
@@ -445,7 +455,7 @@ END spRostersInsert;
 -- TEST:
 -- INSERT DATA FOR TESTING:
 DECLARE 
-    inputID players.playerid%TYPE := 1006;
+    inputID players.playerid%TYPE := 7;
     exitcode INT;
 BEGIN spPlayersInsert(inputID, 12323, 'Chan', 'Nicole', 1, exitcode);
 END;
@@ -457,7 +467,7 @@ END;
 /
 -- DELETE DATA FOR TESTING:
 DECLARE exitcode INT;
-BEGIN spPlayersDelete(1006, exitcode);
+BEGIN spPlayersDelete(7, exitcode);
 END;
 DECLARE exitcode INT;
 BEGIN spTeamsDelete(600, exitcode);
@@ -468,7 +478,7 @@ DECLARE
     inputID rosters.rosterid%TYPE := 900;
     exitcode NUMBER;
 BEGIN 
-    spRostersInsert(inputID, 1006, 600, 1, 16, exitcode);
+    spRostersInsert(inputID, 7, 600, 1, 16, exitcode);
     DBMS_OUTPUT.PUT_LINE('inputID: ' || inputID || ' | ' || 'Error Code: ' || exitcode);
 END;
 /
@@ -482,7 +492,7 @@ DECLARE
     inputID rosters.rosterid%TYPE;
     exitcode NUMBER;
 BEGIN 
-    spRostersInsert(inputID, 1006, 600, 1, 16, exitcode);
+    spRostersInsert(inputID, 7, 600, 1, 16, exitcode);
     DBMS_OUTPUT.PUT_LINE('inputID: ' || inputID || ' | ' || 'Error Code: ' || exitcode);
 END;
 /
@@ -937,21 +947,22 @@ END;
 --    called vwPlayerRosters which includes all fields from players, rosters, and teams in a single output table.  
 --    You only need to include records that have exact matches.
 CREATE OR REPLACE VIEW vwPlayerRosters AS
-    SELECT
-        r.rosterid,
-        p.playerid,
-        regnumber,
-        firstname || ' ' || lastname AS fullname,
-        p.isactive AS ActivePlayer,
-        t.teamid,
-        teamname,
-        t.isactive AS ActiveTeam,
-        jerseycolour,
-        r.isactive AS ActiveRoster,
-        jerseynumber
-    FROM rosters r
-        JOIN players p ON r.playerid = p.playerid
-        JOIN teams t ON r.teamid = t.teamid;
+SELECT 
+    p.playerid      AS playerID,
+    p.regNumber     AS pRegNumber,
+    p.firstName     AS pFirstName,
+    p.lastName      AS pLastName,
+    p.isActive      AS pIsActive,
+    r.playerid      AS rPlayerID,
+    r.rosterid      AS rosterID,
+    r.teamid        AS rTeamID,
+    r.isActive      AS rosterIsActive,
+    t.teamname      AS teamName,
+    t.isActive      AS tIsActive,
+    t.jerseycolour  AS tJerseycolour
+FROM players p
+    INNER JOIN rosters r ON p.playerid = r.playerid AND r.isActive = 1
+    INNER JOIN teams t ON r.teamid = t.teamid;
 -- TEST:
 SELECT * FROM vwPlayerRosters;
 
@@ -959,51 +970,22 @@ SELECT * FROM vwPlayerRosters;
 -- 5. Using the vwPlayerRosters view, create an SP, named spTeamRosterByID, that outputs, the team rosters, with names, 
 --    for a team given a specific input parameter of teamID
 CREATE OR REPLACE PROCEDURE spTeamRosterByID(
-    inputID IN teams.teamid%TYPE,
-    exitcode OUT NUMBER
+    pTeamID     IN      NUMBER,
+    cPlayer     OUT     SYS_REFCURSOR,
+    exitcode    OUT     NUMBER
 ) AS
-    CURSOR csTmRst IS
-        SELECT *
-        FROM vwPlayerRosters
-        WHERE teamid = inputID;
-    trRpt csTmRst%ROWTYPE;
-    found BOOLEAN := FALSE;
 BEGIN
-    OPEN csTmRst;
-    DBMS_OUTPUT.PUT_LINE(
-        RPAD('RosterID', 10) ||
-        RPAD('PlayerID', 10) ||
-        RPAD('RegNumber', 10) ||
-        RPAD('FullName', 26) ||
-        RPAD('ActivePlayer', 16) ||
-        RPAD('TeamID', 8) ||
-        RPAD('Teamname', 10) ||
-        RPAD('ActiveTeam', 12) ||
-        RPAD('Colour', 10) ||
-        RPAD('ActiveRoster', 16) ||
-        RPAD('Jersey No.', 10)
-    );
-        LOOP
-            FETCH csTmRst INTO trRpt;
-            EXIT WHEN csTmRst%NOTFOUND;
-            found := TRUE;
-            DBMS_OUTPUT.PUT_LINE(
-                RPAD(trRpt.rosterid, 10) ||
-                RPAD(trRpt.playerid, 10) ||
-                RPAD(trRpt.regnumber, 10) ||
-                RPAD(trRpt.fullname, 26) ||
-                RPAD(trRpt.activeplayer, 16) ||
-                RPAD(trRpt.teamid, 8) ||
-                RPAD(trRpt.teamname, 10) ||
-                RPAD(trRpt.activeteam, 12) ||
-                RPAD(trRpt.jerseycolour, 10) ||
-                RPAD(trRpt.activeroster, 16) ||
-                RPAD(trRpt.jerseynumber, 10)
-            );
-        END LOOP;
-    CLOSE csTmRst;
-    
-    IF NOT found THEN
+    exitcode := 0;
+    OPEN cPlayer FOR
+        SELECT 
+            teamName, 
+            rosterID, 
+            pFirstName || ' ' || pLastName AS fullName
+        FROM vwPlayerRosters
+        WHERE rTeamID = pTeamID;
+
+    -- error
+    IF NOT cPlayer%ISOPEN THEN
         exitcode := -5;
     END IF;
 EXCEPTION
@@ -1012,12 +994,43 @@ EXCEPTION
 END spTeamRosterByID;
 /
 
--- spTeamRosterByID TEST:
+-- execute
 DECLARE
-    inputID     teams.teamid%TYPE := 214;
-    exitcode    NUMBER;
+    teamID              NUMBER := 212;
+    cTeamRoastPlayer    SYS_REFCURSOR;
+    teamName            VARCHAR2(25); 
+    rosterID            NUMBER;        
+    fullName            VARCHAR2(50); 
+    exitcode            NUMBER;
 BEGIN
-    spTeamRosterByID(inputID, exitcode);
+    spTeamRosterByID(teamID, cTeamRoastPlayer, exitcode);
+
+    IF exitcode = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('Fetching Data...');
+        DBMS_OUTPUT.PUT_LINE('----------------------------------------');
+        DBMS_OUTPUT.PUT_LINE('Team Name | Roster ID | Full Name');
+        DBMS_OUTPUT.PUT_LINE('----------------------------------------');
+
+        LOOP
+            FETCH cTeamRoastPlayer 
+            INTO 
+                teamName, 
+                rosterID, 
+                fullName;
+            EXIT WHEN cTeamRoastPlayer%NOTFOUND;
+
+            -- display
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD(teamName, 9) || ' | ' ||
+                RPAD(rosterID, 9) || ' | ' ||
+                RPAD(fullName, 25) 
+            );
+        END LOOP;
+        CLOSE cTeamRoastPlayer;
+        DBMS_OUTPUT.PUT_LINE('----------------------------------------');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    END IF;
 END;
 /
 
@@ -1027,53 +1040,24 @@ END;
     with names, for a team found through a search string.  
     The entered parameter may be any part of the name.
 */
+
 CREATE OR REPLACE PROCEDURE spTeamRosterByName(
-    inputName IN teams.teamname%TYPE,
-    exitcode OUT NUMBER
+    tName       IN      teams.teamname%TYPE,
+    cPlayer     OUT     SYS_REFCURSOR,
+    exitcode    OUT     NUMBER
 ) AS
-    CURSOR csTmRst IS
-        SELECT *
-        FROM vwPlayerRosters
-        WHERE TRIM(UPPER(teamname)) LIKE ('%'||TRIM(UPPER(inputname))||'%'); 
-    trRpt csTmRst%ROWTYPE;
-    found BOOLEAN := FALSE;
 BEGIN
-    OPEN csTmRst;
-    DBMS_OUTPUT.PUT_LINE(
-        RPAD('RosterID', 10) ||
-        RPAD('PlayerID', 10) ||
-        RPAD('RegNumber', 10) ||
-        RPAD('FullName', 26) ||
-        RPAD('ActivePlayer', 16) ||
-        RPAD('TeamID', 8) ||
-        RPAD('Teamname', 10) ||
-        RPAD('ActiveTeam', 12) ||
-        RPAD('Colour', 10) ||
-        RPAD('ActiveRoster', 16) ||
-        RPAD('Jersey No.', 10)
-    );
-        LOOP
-            FETCH csTmRst INTO trRpt;
-            EXIT WHEN csTmRst%NOTFOUND;
-            found := TRUE;
-            DBMS_OUTPUT.PUT_LINE(
-                RPAD(trRpt.rosterid, 10) ||
-                RPAD(trRpt.playerid, 10) ||
-                RPAD(trRpt.regnumber, 10) ||
-                RPAD(trRpt.fullname, 26) ||
-                RPAD(trRpt.activeplayer, 16) ||
-                RPAD(trRpt.teamid, 8) ||
-                RPAD(trRpt.teamname, 10) ||
-                RPAD(trRpt.activeteam, 12) ||
-                RPAD(trRpt.jerseycolour, 10) ||
-                RPAD(trRpt.activeroster, 16) ||
-                RPAD(trRpt.jerseynumber, 10)
-            );
-        END LOOP;
-    CLOSE csTmRst;
-    
-    IF NOT found THEN
-        exitcode := -5;
+    exitcode := 0;
+    OPEN cPlayer FOR
+        SELECT 
+            teamname, 
+            rosterID, 
+            pFirstName || ' ' || pLastName AS fullName
+        FROM vwPlayerRosters
+        WHERE TRIM(UPPER(teamname)) LIKE ('%'||TRIM(UPPER(tName))||'%'); 
+
+    IF NOT cPlayer%ISOPEN THEN
+        exitcode := -8;
     END IF;
 EXCEPTION
     WHEN OTHERS THEN
@@ -1082,15 +1066,38 @@ END spTeamRosterByName;
 /
 
 DECLARE
-    inputNameValue teams.teamname%TYPE;
-    exitcode NUMBER;
+    vTeamName           VARCHAR2(25);
+    cTeamRoastPlayer    SYS_REFCURSOR;
+    cTeamRoast          VARCHAR2(25);
+    rosterID            NUMBER;
+    fullName            VARCHAR2(50);
+    exitcode            NUMBER;
 BEGIN
-    inputNameValue := '&inputName';
-    spTeamRosterByName(inputNameValue, exitcode);
-    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
+    vTeamName := '&team_name'; --get team
+    spTeamRosterByName(vTeamName, cTeamRoastPlayer, exitcode);
+    
+    IF exitcode = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('----------------------------------------');
+        DBMS_OUTPUT.PUT_LINE('Team Name | Roster ID | Full Name');
+        DBMS_OUTPUT.PUT_LINE('----------------------------------------');
+            LOOP
+                FETCH cTeamRoastPlayer INTO cTeamRoast, rosterID, fullName;
+                EXIT WHEN cTeamRoastPlayer%NOTFOUND;
+                -- Display
+                DBMS_OUTPUT.PUT_LINE(
+                    RPAD(cTeamRoast, 11) || ' | ' ||
+                    RPAD(rosterID, 11) || ' | ' ||
+                    RPAD(fullName, 25)
+                );
+            END LOOP;
+        CLOSE cTeamRoastPlayer;
+
+        DBMS_OUTPUT.PUT_LINE('----------------------------------------');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
+    END IF;
 END;
 /
-
 
 -- 7.	Create a view that returns the number of players currently registered on each team, called vwTeamsNumPlayers.
 CREATE OR REPLACE VIEW vwTeamsNumPlayers AS
@@ -1500,9 +1507,9 @@ ROLLBACK;
 14.	Each group must be creative and come up with an object (SP, UDF, or potentially trigger), of your own choosing, 
 that will be built in the database to help support the same ideals of the above objects.
 */
--- spMVPperteam displays a list of top players in each team
--- teams that have no goals scored are not included
--- useful for when a club bids for a player transfer
+--spMVPperteam displays a list of top players in each team
+--teams that have no goals scored are not included
+--useful for when a club bids for a player transfer
 CREATE OR REPLACE PROCEDURE spMVPperteam (exitcode OUT NUMBER) AS
     CURSOR mvp_cur IS 
         SELECT 
@@ -1574,3 +1581,15 @@ DECLARE exitcode NUMBER;
 BEGIN spMVPperteam(exitcode);
 END;
 /
+
+
+
+
+
+
+
+
+
+
+
+

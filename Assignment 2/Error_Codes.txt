@@ -9,3 +9,4 @@ Delete Error            : -4
 No Data Found Error     : -5
 Too many rows returned  : -6
 Invalid input           : -7
+Cursor / Fetch Error    : -8
