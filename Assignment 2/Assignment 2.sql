@@ -25,11 +25,6 @@ These should be consistent values across all SPs such that only a single table o
 */
 
 -----------------INSERT--------------------------------
-
---Create sequance 
- CREATE SEQUENCE  "DBS311_233NDD01"."PLAYERID_SEQ"  MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 61 CACHE 20 NOORDER  NOCYCLE  NOPARTITION ;
-
-
 CREATE OR REPLACE PROCEDURE spInsertPlayer (
     regNumber VARCHAR2,
     firstName VARCHAR2,
@@ -145,7 +140,7 @@ END;
 SELECT * FROM players
 WHERE playerID=10;
 /
-------------SELECT---------------------
+------------SELECT----------------------
 CREATE OR REPLACE PROCEDURE spGetPlayerByID(pID IN NUMBER, errorCode OUT NUMBER, playerName OUT VARCHAR2, playerLastName OUT VARCHAR2, playerIsActive OUT NUMBER) AS
 BEGIN
     SELECT firstName, lastName, isActive
