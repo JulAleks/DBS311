@@ -1235,52 +1235,71 @@ END;
     where n is an input parameter.  Make sure your code will work on any day of the year.
 */
 CREATE OR REPLACE PROCEDURE spSchedPastGames(
-    n NUMBER
+    n           IN      NUMBER,
+    exitcode    OUT     NUMBER
 )AS
-    matchCt number:=0;
-    date_diff DATE;
-    exp1 EXCEPTION;
-    CURSOR data_cur IS SELECT * FROM vwSchedule WHERE gamedatetime BETWEEN TO_DATE(date_diff, 'YY-MM-DD') AND TO_DATE(SYSDATE, 'YY-MM-DD');
-    --hard coding to_date cast required otherwise games where sysdate-1 is not captured, or n has to be +1
+    matchCt                NUMBER := 0;
+    date_diff              DATE;
+    e_negativeInput        EXCEPTION;
+    CURSOR data_cur IS 
+        SELECT * 
+        FROM vwSchedule s
+        WHERE s.gamedatetime BETWEEN TO_DATE(date_diff, 'YY-MM-DD') AND TO_DATE(SYSDATE, 'YY-MM-DD')
+            AND s.isplayed = 1;
     data_rec vwSchedule%ROWTYPE;
 BEGIN
-    IF n <=0 THEN
-        RAISE exp1;
+    exitcode := 0;
+    IF n < 0 THEN
+        RAISE e_negativeInput;
     END IF;
+    
     date_diff := SYSDATE -n;
     OPEN data_cur;
-    LOOP
-        matchCt:= matchCt + 1;
-        FETCH data_cur INTO data_rec;
-        EXIT WHEN data_cur%NOTFOUND;
-        DBMS_OUTPUT.PUT_LINE(RPAD('Game ID',16) || LPAD(': ', 2) || data_rec.gameid);
-        DBMS_OUTPUT.PUT_LINE(RPAD('Game Date-time',16) || LPAD(': ', 2) || to_char(data_rec.gamedatetime, 'DD Month, YYYY'));
-        DBMS_OUTPUT.PUT_LINE(RPAD('Home Team',16) || LPAD(': ', 2) || data_rec.HomeTeamName);
-        DBMS_OUTPUT.PUT_LINE(RPAD('Visit Team',16) || LPAD(': ', 2) || data_rec.VisitTeamName);
-        DBMS_OUTPUT.PUT_LINE(RPAD('Location',16) || LPAD(': ', 2) || data_rec.locationname);
-        DBMS_OUTPUT.PUT_LINE('');
-    END LOOP;
+        LOOP
+            FETCH data_cur INTO data_rec;
+            EXIT WHEN data_cur%NOTFOUND;
+            matchCt := matchCt + 1;
+            DBMS_OUTPUT.PUT_LINE(RPAD('Game ID',16) || LPAD(': ', 2) || data_rec.gameid);
+            DBMS_OUTPUT.PUT_LINE(RPAD('Game Date-time',16) || LPAD(': ', 2) || to_char(data_rec.gamedatetime, 'DD Month, YYYY'));
+            DBMS_OUTPUT.PUT_LINE(RPAD('Home Team',16) || LPAD(': ', 2) || data_rec.HomeTeamName);
+            DBMS_OUTPUT.PUT_LINE(RPAD('Visit Team',16) || LPAD(': ', 2) || data_rec.VisitTeamName);
+            DBMS_OUTPUT.PUT_LINE(RPAD('Location',16) || LPAD(': ', 2) || data_rec.locationname);
+            DBMS_OUTPUT.PUT_LINE('');
+        END LOOP;
     CLOSE data_cur;
-    IF matchCt =0 THEN
-        DBMS_OUTPUT.PUT_LINE('No matches found between ' || TO_CHAR(date_diff, 'Mon DD, YYYY') || ' and ' || TO_CHAR(SYSDATE, 'Mon DD, YYYY'));
+    IF matchCt = 0 THEN
+        exitcode := -5;
     END IF;
 EXCEPTION
-WHEN INVALID_NUMBER
-    THEN  DBMS_OUTPUT.PUT_LINE('ERROR: Value entered must be a number');
-WHEN exp1
-    THEN DBMS_OUTPUT.PUT_LINE('ERROR: Must be a value greater than 0');
-WHEN TOO_MANY_ROWS 
-    THEN DBMS_OUTPUT.PUT_LINE('You Query resulted in too many returned rows');
-WHEN NO_DATA_FOUND 
-    THEN DBMS_OUTPUT.PUT_LINE('No data was returned by your query');
-WHEN OTHERS 
-    THEN DBMS_OUTPUT.PUT_LINE('Error!');
+    WHEN e_negativeInput THEN 
+        exitcode := -7;
+    WHEN TOO_MANY_ROWS THEN 
+        exitcode := -6;
+    WHEN OTHERS THEN 
+        exitcode := -1;
 END;
-
--- execute
-BEGIN
-    spSchedPastGames(1);
+/
+-- Q11 TEST: DEFAULT
+DECLARE exitcode INT;
+BEGIN 
+    spSchedPastGames(90, exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exitcode: ' || exitcode);
 END;
+/
+-- Q11 TEST: USER INPUT NEGATIVE DAYS
+DECLARE exitcode INT;
+BEGIN 
+    spSchedPastGames(-3,exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exitcode: ' || exitcode);
+END;
+/
+-- Q11 TEST: USER INPUT 0
+DECLARE exitcode INT;
+BEGIN 
+    spSchedPastGames(0,exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exitcode: ' || exitcode);
+END;
+/
 
 /*
 12.	Using the Standings calculation demo code provided earlier in the semester, create a Stored Procedure, named spRunStandings, 
