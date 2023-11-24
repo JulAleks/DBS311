@@ -1238,13 +1238,12 @@ CREATE OR REPLACE PROCEDURE spSchedPastGames(
     n           IN      NUMBER,
     exitcode    OUT     NUMBER
 )AS
-    matchCt                NUMBER := 0;
-    date_diff              DATE;
+    matchCt                NUMBER   := 0;
     e_negativeInput        EXCEPTION;
     CURSOR data_cur IS 
         SELECT * 
         FROM vwSchedule s
-        WHERE s.gamedatetime BETWEEN TO_DATE(date_diff, 'YY-MM-DD') AND TO_DATE(SYSDATE, 'YY-MM-DD')
+        WHERE s.gameDateTime BETWEEN TRUNC(SYSDATE) - n AND TRUNC(SYSDATE)
             AND s.isplayed = 1;
     data_rec vwSchedule%ROWTYPE;
 BEGIN
@@ -1252,8 +1251,7 @@ BEGIN
     IF n < 0 THEN
         RAISE e_negativeInput;
     END IF;
-    
-    date_diff := SYSDATE -n;
+
     OPEN data_cur;
         LOOP
             FETCH data_cur INTO data_rec;
@@ -1396,20 +1394,33 @@ DECLARE
     GD NUMBER;
 BEGIN
     spRunStandings(stand_cursor); --call the sp
+    DBMS_OUTPUT.PUT_LINE(
+        RPAD('TeamID', 8)||
+        RPAD('Teamname', 10)||
+        RPAD('GP', 4)||
+        RPAD('W',4)||
+        RPAD('L',4)||
+        RPAD('T',4)||
+        RPAD('PTS',4)||
+        RPAD('GF',4) ||
+        RPAD('GA',4) ||
+        RPAD('GD',4) 
+    );
     LOOP
         FETCH stand_cursor INTO teamid, teamname, GP, W, L, T, PTS, GF, GA, GD;
         EXIT WHEN stand_cursor%NOTFOUND;
-        DBMS_OUTPUT.PUT_LINE('Team ID: '|| teamid);
-        DBMS_OUTPUT.PUT_LINE('Team Name: '|| teamname);
-        DBMS_OUTPUT.PUT_LINE('Group plays: '|| gp);
-        DBMS_OUTPUT.PUT_LINE('Wins: '|| w);
-        DBMS_OUTPUT.PUT_LINE('Loses: '|| l);
-        DBMS_OUTPUT.PUT_LINE('Ties: '|| t);
-        DBMS_OUTPUT.PUT_LINE('Points: '|| pts);
-        DBMS_OUTPUT.PUT_LINE('Goals For: '|| gf);
-        DBMS_OUTPUT.PUT_LINE('Goals Against: '|| ga);
-        DBMS_OUTPUT.PUT_LINE('Goals Difference: '|| gd); 
-        DBMS_OUTPUT.PUT_LINE(' '); 
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD(teamid, 8)||
+                RPAD(teamname, 10)||
+                RPAD(GP, 4)||
+                RPAD(W,4)||
+                RPAD(L,4)||
+                RPAD(T,4)||
+                RPAD(PTS,4)||
+                RPAD(GF,4) ||
+                RPAD(GA,4) ||
+                RPAD(GD,4) 
+            );
     END LOOP;
     CLOSE stand_cursor;
 END;
@@ -1428,7 +1439,7 @@ CREATE TABLE tempStandings(
     GA NUMBER,
     GD NUMBER
 );
-
+--DROP TABLE tempStandings;
 CREATE OR REPLACE PROCEDURE spRunStandings(stand_ref_cur IN OUT SYS_REFCURSOR) IS
     teamid standings.theteamid%TYPE;
     teamname standings.teamname%TYPE;
@@ -1485,17 +1496,18 @@ BEGIN
     LOOP
         FETCH stand_cursor INTO teamid, teamname, GP, W, L, T, PTS, GF, GA, GD;
         EXIT WHEN stand_cursor%NOTFOUND;
-        DBMS_OUTPUT.PUT_LINE('Team ID: '|| teamid);
-        DBMS_OUTPUT.PUT_LINE('Team Name: '|| teamname);
-        DBMS_OUTPUT.PUT_LINE('Group plays: '|| gp);
-        DBMS_OUTPUT.PUT_LINE('Wins: '|| w);
-        DBMS_OUTPUT.PUT_LINE('Loses: '|| l);
-        DBMS_OUTPUT.PUT_LINE('Ties: '|| t);
-        DBMS_OUTPUT.PUT_LINE('Points: '|| pts);
-        DBMS_OUTPUT.PUT_LINE('Goals For: '|| gf);
-        DBMS_OUTPUT.PUT_LINE('Goals Against: '|| ga);
-        DBMS_OUTPUT.PUT_LINE('Goals Difference: '|| gd); 
-        DBMS_OUTPUT.PUT_LINE(' '); 
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD(teamid, 8)||
+                RPAD(teamname, 10)||
+                RPAD(GP, 4)||
+                RPAD(W,4)||
+                RPAD(L,4)||
+                RPAD(T,4)||
+                RPAD(PTS,4)||
+                RPAD(GF,4) ||
+                RPAD(GA,4) ||
+                RPAD(GD,4) 
+            );
     END LOOP;
     CLOSE stand_cursor;
 END;
