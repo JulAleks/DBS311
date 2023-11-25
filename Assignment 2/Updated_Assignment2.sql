@@ -11,7 +11,7 @@
 /***************************************
 
 /*
-    Exit code (Error code):
+    Exit code (Exit code):
     Success                 : 0
     Generic Error           : -1
     Insert Error            : -2
@@ -37,10 +37,9 @@ d.	SELECT return all fields in a single row from a table given a PK value.
 •	Do not use DBMS_OUTPUT in the procedures in any way.
     If you use it for debugging purposes, make sure it is commented out in the final submission.
 •	All SPs must have appropriate exception handling specific to the method and table.
-•	Use error codes of the same type and size of the PK to return values that can be clearly determined to indicate an error (example: -1 might indicate no record was found).  
-    These should be consistent values across all SPs such that only a single table of error codes is required in the documentation.
+•	Use Exit codes of the same type and size of the PK to return values that can be clearly determined to indicate an error (example: -1 might indicate no record was found).  
+    These should be consistent values across all SPs such that only a single table of Exit codes is required in the documentation.
 */
-
 -- PLAYER INSERT:
 CREATE OR REPLACE PROCEDURE spPlayersInsert(
     sp_playerid      IN OUT      players.playerid%TYPE,
@@ -83,17 +82,16 @@ EXCEPTION
 END spPlayersInsert;
 /
 -- TEST 1 - MANUAL INPUT NUMBER:
+-- DELETE FROM players WHERE playerid = 7;
 DECLARE 
     inputID players.playerid%TYPE := 7;
     exitcode NUMBER;
 BEGIN 
     spPlayersInsert(inputID, 12323, 'Cristiano', 'Ronaldo', 1, exitcode);
     DBMS_OUTPUT.PUT_LINE('Playerid: ' || inputID);
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit Code: ' || exitcode);
 END;
 /
-DELETE FROM players WHERE playerid = 7;
-
 -- TEST 2 - AUTONUMBER:
 DECLARE 
     inputID players.playerid%TYPE;
@@ -101,10 +99,11 @@ DECLARE
 BEGIN 
     spPlayersInsert(inputID, 12323, 'Cristiano', 'Ronaldo', 1, exitcode);
     DBMS_OUTPUT.PUT_LINE('Playerid: ' || inputID);
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
 END;
 /
-ROLLBACK;
+-- ROLLBACK;
+
 
 -- PLAYER UPDATE:
 CREATE OR REPLACE PROCEDURE spPlayersUpdate(
@@ -141,23 +140,22 @@ END spPlayersUpdate;
 DECLARE exitcode INT;
 BEGIN 
     spPlayersUpdate(7, 12323, 'Diego', 'Maradona', 0, exitcode);
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
 END;
 /
 SELECT * FROM players
 WHERE playerid = 7;
-
 -- TEST 2 - MODIFY NON-EXISTING DATA:
 DECLARE exitcode INT;
 BEGIN 
-    spPlayersUpdate(987666, 55555, 'Ogeid', 'Anodaram', 1, exitcode);
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    spPlayersUpdate(987666, 55555, 'Ogeid', 'Anodaram', 1, exitcode); -- UPDATE ERROR: -3
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
 END;
 /
 -- PLAYER DELETE:
 CREATE OR REPLACE PROCEDURE spPlayersDelete(
     sp_playerid     IN      players.playerid%TYPE,
-    exitcode         OUT     NUMBER
+    exitcode        OUT     NUMBER
 )AS
 BEGIN
     exitcode := 0;
@@ -174,14 +172,14 @@ EXCEPTION
     WHEN OTHERS THEN
         exitcode := -1;
 END spPlayersDelete;
-
+/
 DECLARE
     exitcode NUMBER;
 BEGIN
-    spPlayersDelete(7, exitcode);
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
-    spPlayersDelete(7, exitcode); -- NOT EXIST ANY MORE
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    spPlayersDelete(7, exitcode); -- DELETE SUCESS: 0
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
+    spPlayersDelete(7, exitcode); -- NOT EXIST ANY MORE - DELETE FAIL: -4
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
 END; 
 /
 
@@ -219,10 +217,10 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE('player firstname: ' || spRecord.firstname);
     DBMS_OUTPUT.PUT_LINE('player regnumber: ' || spRecord.regnumber);
     DBMS_OUTPUT.PUT_LINE('player isactive: ' || spRecord.isactive);
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
     
     spPlayersSelect(987666, spRecord, exitcode);
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
 END; 
 /
 
@@ -261,19 +259,17 @@ EXCEPTION
         exitcode := -1;
 END spTeamsInsert; 
 /
-
 -- TEST 1 - MANUAL INPUT NUMBER:
+-- DELETE FROM teams WHERE teamid = 600;
 DECLARE 
     inputID teams.teamid%TYPE := 600;
     exitcode NUMBER;
 BEGIN 
     spTeamsInsert(inputID, 'YellowJays', 1, 'Yellow', exitcode);
     DBMS_OUTPUT.PUT_LINE('Teamid: ' || inputID);
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
 END;
 /
-DELETE FROM teams WHERE teamid = 600;
-
 -- TEST 2 - AUTONUMBER:
 DECLARE 
     inputID teams.teamid%TYPE;
@@ -281,7 +277,7 @@ DECLARE
 BEGIN 
     spTeamsInsert(inputID, 'YellowJays', 1, 'Yellow', exitcode);
     DBMS_OUTPUT.PUT_LINE('Playerid: ' || inputID);
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
 END;
 /
 ROLLBACK;
@@ -318,17 +314,16 @@ END spTeamsUpdate;
 DECLARE exitcode NUMBER;
 BEGIN 
     spTeamsUpdate(600, 'YellowYays', 1, 'Big Yellow', exitcode);
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
 END;
 /
 SELECT * FROM teams
 WHERE teamid = 600;
-
 -- TEST 2 - MODIFY NON-EXISTING DATA:
 DECLARE exitcode NUMBER;
 BEGIN 
     spTeamsUpdate(666, 'BlackPink', 0, 'Black and Pink', exitcode);
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
 END;
 /
 -- TEAM DELETE:
@@ -357,9 +352,9 @@ DECLARE
     exitcode NUMBER;
 BEGIN
     spTeamsDelete(600, exitcode);
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
     spTeamsDelete(600, exitcode); -- NOT EXIST ANY MORE
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
 END; 
 /
 -- TEAM SELECT
@@ -396,11 +391,11 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE('Team name: ' || spRecord.teamname);
     DBMS_OUTPUT.PUT_LINE('Team isactive: ' || spRecord.isactive);
     DBMS_OUTPUT.PUT_LINE('Team jersey colour: ' || spRecord.jerseycolour);
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
     DBMS_OUTPUT.PUT_LINE('------------------------------');
     DBMS_OUTPUT.PUT_LINE('TEST 2:');
     spTeamsSelect(666, spRecord, exitcode);
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
     DBMS_OUTPUT.PUT_LINE('------------------------------');
 END; 
 /
@@ -463,7 +458,7 @@ END spRostersInsert;
 /
 
 -- TEST:
--- INSERT DATA FOR TESTING:
+-- **INSERT** DATA FOR TESTING:
 DECLARE 
     inputID players.playerid%TYPE := 7;
     exitcode INT;
@@ -475,13 +470,14 @@ DECLARE
 BEGIN spTeamsInsert(inputID, 'YellowJays', 1, 'Yellow', exitcode);
 END;
 /
--- DELETE DATA FOR TESTING:
+-- **DELETE** DATA FOR TESTING:
 DECLARE exitcode INT;
 BEGIN spPlayersDelete(7, exitcode);
 END;
 DECLARE exitcode INT;
 BEGIN spTeamsDelete(600, exitcode);
 END;
+-- DELETE FROM rosters WHERE rosterid = 900;
 /
 -- START TESTING:
 DECLARE 
@@ -489,21 +485,18 @@ DECLARE
     exitcode NUMBER;
 BEGIN 
     spRostersInsert(inputID, 7, 600, 1, 16, exitcode);
-    DBMS_OUTPUT.PUT_LINE('inputID: ' || inputID || ' | ' || 'Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('inputID: ' || inputID || ' | ' || 'Exit code: ' || exitcode);
 END;
 /
 SELECT * FROM rosters
 WHERE rosterid = 900;
-
-DELETE FROM rosters WHERE rosterid = 900;
-
 -- TEST - AUTONUMBER:
 DECLARE 
     inputID rosters.rosterid%TYPE;
     exitcode NUMBER;
 BEGIN 
     spRostersInsert(inputID, 7, 600, 1, 16, exitcode);
-    DBMS_OUTPUT.PUT_LINE('inputID: ' || inputID || ' | ' || 'Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('inputID: ' || inputID || ' | ' || 'Exit code: ' || exitcode);
 END;
 /
 ROLLBACK;
@@ -563,7 +556,7 @@ END spRostersUpdate;
 DECLARE exitcode NUMBER;
 BEGIN 
     spRostersUpdate(900, 1026, 626, 1, exitcode);
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
 END;
 /
 SELECT * FROM teams
@@ -596,7 +589,7 @@ DECLARE
     exitcode NUMBER;
 BEGIN
     spRostersDelete(900, exitcode); -- TRY TO DELETE TWICE
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
 END; 
 /
 -- ROSTER SELECT
@@ -634,11 +627,11 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE('Roster teamID: ' || spRecord.teamid);
     DBMS_OUTPUT.PUT_LINE('Roster isactive: ' || spRecord.isactive);
     DBMS_OUTPUT.PUT_LINE('Roster jersey number: ' || spRecord.jerseynumber);
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
     DBMS_OUTPUT.PUT_LINE('------------------------------');
     DBMS_OUTPUT.PUT_LINE('TEST 2:');
     spRostersSelect(901, spRecord, exitcode);
-    DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
     DBMS_OUTPUT.PUT_LINE('------------------------------');
 END; 
 /
@@ -725,7 +718,7 @@ EXCEPTION
     WHEN OTHERS THEN
         exitcode := -1;
 END spTeamsSelectAll;
-
+/
 -- spTeamsSelectAll TEST:
 DECLARE exitcode NUMBER;
 BEGIN spTeamsSelectAll(exitcode);
@@ -793,7 +786,6 @@ EXCEPTION
         exitcode := -1;
 END spPlayersSelectAll;
 /
-
 -- spTeamsSelectAll CALL:
 DECLARE 
     exitcode     NUMBER;
@@ -835,7 +827,6 @@ EXCEPTION
         DBMS_OUTPUT.PUT_LINE('Generic error occured. Exit code: ' || exitcode);
 END;
 /
-
 -- Q3 spTeamsSelectAll:
 CREATE OR REPLACE PROCEDURE spTeamsSelectAll(
     csTeams     OUT SYS_REFCURSOR,
@@ -851,7 +842,6 @@ EXCEPTION
         exitcode := -1;
 END spTeamsSelectAll;
 /
-
 -- spTeamsSelectAll CALL:
 DECLARE 
     exitcode     NUMBER;
@@ -908,7 +898,6 @@ EXCEPTION
         exitcode := -1;
 END spRostersSelectAll;
 /
-
 -- spRostersSelectAll CALL:
 DECLARE 
     exitcode NUMBER;
@@ -951,11 +940,7 @@ EXCEPTION
         DBMS_OUTPUT.PUT_LINE('Generic error occured. Exit code: ' || exitcode);
 END;
 /
---    CLOSE xCursor;
-/*  Should not close the cursor (e.g. csRosters) after opening it. 
-    The cursor should be left open so that the calling environment (the test block, in this case) can fetch data from it. 
-    The responsibility for closing the cursor shifts to the caller. */
-    
+
 
 -- 4. Create a view which stores the “players on teams” information, 
 --    called vwPlayerRosters which includes all fields from players, rosters, and teams in a single output table.  
@@ -983,6 +968,7 @@ SELECT * FROM vwPlayerRosters;
 
 -- 5. Using the vwPlayerRosters view, create an SP, named spTeamRosterByID, that outputs, the team rosters, with names, 
 --    for a team given a specific input parameter of teamID
+/
 CREATE OR REPLACE PROCEDURE spTeamRosterByID(
     pTeamID     IN      NUMBER,
     cPlayer     OUT     SYS_REFCURSOR,
@@ -1007,8 +993,7 @@ EXCEPTION
         exitcode := -1;
 END spTeamRosterByID;
 /
-
--- execute
+-- Q5 EXECUTE
 DECLARE
     teamID              NUMBER := 212;
     cTeamRoastPlayer    SYS_REFCURSOR;
@@ -1043,7 +1028,7 @@ BEGIN
         CLOSE cTeamRoastPlayer;
         DBMS_OUTPUT.PUT_LINE('----------------------------------------');
     ELSE
-        DBMS_OUTPUT.PUT_LINE('Error Code: ' || exitcode);
+        DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
     END IF;
 END;
 /
@@ -1054,7 +1039,6 @@ END;
     with names, for a team found through a search string.  
     The entered parameter may be any part of the name.
 */
-
 CREATE OR REPLACE PROCEDURE spTeamRosterByName(
     tName       IN      teams.teamname%TYPE,
     cPlayer     OUT     SYS_REFCURSOR,
@@ -1078,7 +1062,7 @@ EXCEPTION
         exitcode := -1;
 END spTeamRosterByName;
 /
-
+-- Q6 EXECUTE:
 DECLARE
     vTeamName           VARCHAR2(25);
     cTeamRoastPlayer    SYS_REFCURSOR;
@@ -1122,11 +1106,12 @@ CREATE OR REPLACE VIEW vwTeamsNumPlayers AS
         RIGHT JOIN rosters r ON r.playerid = p.playerid
         RIGHT JOIN teams t ON t.teamid = r.teamid
     GROUP BY t.teamid;
-    
 -- Q7 Execute
 SELECT * FROM vwTeamsNumPlayers;
 
+
 -- 8.	Using vwTeamsNumPlayers create a user defined function, that given the team PK, will return the number of players currently registered, called fncNumPlayersByTeamID.
+/
 CREATE OR REPLACE FUNCTION fncNumPlayersByTeamID (team INT)
     RETURN INT IS 
     numOfPlayer INT := 0;  -- declared variable that was never used
@@ -1142,7 +1127,7 @@ EXCEPTION
     WHEN NO_DATA_FOUND THEN
         RETURN -5;
 END fncNumPlayersByTeamID;
-
+/
 -- Q8 Execute
 DECLARE
     team INT;
@@ -1152,7 +1137,7 @@ BEGIN
     res:= fncNumPlayersByTeamID(team);
     DBMS_OUTPUT.PUT_LINE('Number of Player in team # '|| team || ': ' || res);
 END;
-
+/
 
 -- 9.	Create a view, called vwSchedule, 
 --      that shows all games, but includes the written names for teams and locations, in addition to the PK/FK values.  
@@ -1177,18 +1162,19 @@ CREATE OR REPLACE VIEW vwSchedule AS
         JOIN sllocations sll ON sll.locationid = g.locationid
         JOIN teams t1 ON g.hometeam = t1.teamid
         JOIN teams t2 ON g.visitteam = t2.teamid;
-
--- Q9 Execute
+-- Q9 EXECUTE
 SELECT * FROM vwSchedule;
 
 
 -- 10.	Create a stored procedure, spSchedUpcomingGames, using DBMS_OUTPUT, 
 --      that displays the games to be played in the next n days, 
 --      where n is an input parameter.  Make sure your code will work on any day of the year.
+/
 CREATE OR REPLACE PROCEDURE spSchedUpcomingGames (nextGameDay INT, exitcode OUT NUMBER) AS  -- games.gamedatetime%TYPE
     found BOOLEAN := FALSE;
     e_negativeDay EXCEPTION;
 BEGIN
+    exitcode := 0;
     IF nextGameDay < 0 THEN
         RAISE e_negativeDay;
     END IF;
@@ -1220,22 +1206,22 @@ EXCEPTION
         exitcode := -1;
 END spSchedUpcomingGames;
 /
--- Q10 Execute
-DECLARE exitcode INT;
+-- Q10 EXECUTE
 -- TEST: DEFAULT
+DECLARE exitcode INT;
 BEGIN 
     spSchedUpcomingGames(6, exitcode);
     DBMS_OUTPUT.PUT_LINE('Exitcode: ' || exitcode);
 END;
 /
--- TEST: USER INPUT NEGATIVE DAYS
+-- TEST: USER INPUT - NEGATIVE DAYS
 DECLARE exitcode INT;
 BEGIN 
     spSchedUpcomingGames(-1,exitcode);
     DBMS_OUTPUT.PUT_LINE('Exitcode: ' || exitcode);
 END;
 /
--- TEST: USER INPUT 0
+-- TEST: USER INPUT - 0
 DECLARE exitcode INT;
 BEGIN 
     spSchedUpcomingGames(0,exitcode);
@@ -1301,14 +1287,14 @@ END;
 -- Q11 TEST: USER INPUT NEGATIVE DAYS
 DECLARE exitcode INT;
 BEGIN 
-    spSchedPastGames(-3,exitcode);
+    spSchedPastGames(-3,exitcode); -- INVALID INPUT: -7
     DBMS_OUTPUT.PUT_LINE('Exitcode: ' || exitcode);
 END;
 /
 -- Q11 TEST: USER INPUT 0
 DECLARE exitcode INT;
 BEGIN 
-    spSchedPastGames(0,exitcode);
+    spSchedPastGames(0,exitcode); -- NO_DATA_FOUND: -5
     DBMS_OUTPUT.PUT_LINE('Exitcode: ' || exitcode);
 END;
 /
@@ -1384,10 +1370,11 @@ CREATE TABLE tempStandings AS (
         Pts DESC, 
         W DESC, 
         GD Desc;
---DROP TABLE tempStandings;
+-- DROP TABLE tempStandings;
  SELECT * FROM tempStandings;
+
+-- Q12 cont - spRunStandings:
 /
--- spRunStandings CANNOT receive parameter as it need to run in a TRIGGER.
 CREATE OR REPLACE PROCEDURE spRunStandings AS
     CURSOR csStandings IS 
             SELECT *
@@ -1436,8 +1423,6 @@ END spRunStandings;
 -- Q12 TEST:
 DECLARE exitcode NUMBER;
 BEGIN spRunStandings;
---    spRunStandings(exitcode);
---    DBMS_OUTPUT.PUT_LINE('Exitcode: ' || exitcode);
 END;
 /
 
@@ -1521,7 +1506,7 @@ END trgUpdateTempStandings;
 /
 -- TEST:
 UPDATE games SET homescore = 96 WHERE gameid = 1;
--- Output: 
+-- TEST Output: 
 -- TeamID 218 From GA 21 -> GF 111, GD 3 -> GD 93
 -- TeamID 212 From GA 28 -> GA 118, GD -10 -> GD -100
 ROLLBACK;
@@ -1530,9 +1515,10 @@ ROLLBACK;
 14.	Each group must be creative and come up with an object (SP, UDF, or potentially trigger), of your own choosing, 
 that will be built in the database to help support the same ideals of the above objects.
 */
---spMVPperteam displays a list of top players in each team
---teams that have no goals scored are not included
---useful for when a club bids for a player transfer
+-- * The procedure spMVPperteam displays a list of top players in each team
+--      + Teams that have no goals scored are not included
+--      + Useful for when a club bids for a player transfer
+/
 CREATE OR REPLACE PROCEDURE spMVPperteam (exitcode OUT NUMBER) AS
     CURSOR mvp_cur IS 
         SELECT 
@@ -1598,7 +1584,6 @@ EXCEPTION
         exitcode := -1;
 END;
 /
-
 -- TEST:
 DECLARE exitcode NUMBER;
 BEGIN spMVPperteam(exitcode);
