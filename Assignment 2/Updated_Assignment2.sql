@@ -1604,15 +1604,3 @@ DECLARE exitcode NUMBER;
 BEGIN spMVPperteam(exitcode);
 END;
 /
-
-
-
-
-
-
-
-
-
-
-
-
