@@ -15,13 +15,13 @@
     Success                 : 0
     Generic Error           : -1
     Insert Error            : -2
-    Insert existing id      : -201
+    Insert Existing ID      : -201
     Update Error            : -3
     Delete Error            : -4
     No Data Found Error     : -5
-    Too many rows returned  : -6
-    Invalid input           : -7
-    Cursor / Fetch Error    : -8
+    Too Many Rows Eeturned  : -6
+    Invalid Input           : -7
+    Invalid Cursor          : -8
 */
 ----------------------------------------
 
@@ -782,10 +782,13 @@ BEGIN
         SELECT * 
         FROM players;
 EXCEPTION
+   WHEN INVALID_CURSOR THEN 
+        exitcode := -8;
     WHEN OTHERS THEN
         exitcode := -1;
 END spPlayersSelectAll;
 /
+
 -- spTeamsSelectAll CALL:
 DECLARE 
     exitcode     NUMBER;
@@ -827,6 +830,7 @@ EXCEPTION
         DBMS_OUTPUT.PUT_LINE('Generic error occured. Exit code: ' || exitcode);
 END;
 /
+
 -- Q3 spTeamsSelectAll:
 CREATE OR REPLACE PROCEDURE spTeamsSelectAll(
     csTeams     OUT SYS_REFCURSOR,
@@ -838,10 +842,13 @@ BEGIN
         SELECT * 
         FROM teams;
 EXCEPTION
+   WHEN INVALID_CURSOR THEN 
+        exitcode := -8;
     WHEN OTHERS THEN
         exitcode := -1;
 END spTeamsSelectAll;
 /
+
 -- spTeamsSelectAll CALL:
 DECLARE 
     exitcode     NUMBER;
@@ -894,10 +901,13 @@ BEGIN
         SELECT * 
         FROM rosters;
 EXCEPTION
+   WHEN INVALID_CURSOR THEN 
+        exitcode := -8;
     WHEN OTHERS THEN
         exitcode := -1;
 END spRostersSelectAll;
 /
+
 -- spRostersSelectAll CALL:
 DECLARE 
     exitcode NUMBER;
@@ -1058,6 +1068,8 @@ BEGIN
         exitcode := -8;
     END IF;
 EXCEPTION
+   WHEN INVALID_CURSOR THEN 
+        exitcode := -8;
     WHEN OTHERS THEN
         exitcode := -1;
 END spTeamRosterByName;
@@ -1565,17 +1577,19 @@ BEGIN
     exitcode := 0;
     DBMS_OUTPUT.PUT_LINE('List of top players: ' );
     OPEN mvp_cur;
-    LOOP
-        FETCH mvp_cur INTO mRpt;
-        EXIT WHEN mvp_cur%NOTFOUND;
-        
-        DBMS_OUTPUT.PUT_LINE('Player ID: ' || mRpt.playerid || ' ' || mRpt.lastname || ', '|| mRpt.firstname );
-        DBMS_OUTPUT.PUT_LINE('Team ID: ' || mRpt.teamid|| ' ' || mRpt.teamname );
-        DBMS_OUTPUT.PUT_LINE('Goals made: ' || mRpt.goalCt);
-        DBMS_OUTPUT.PUT_LINE(' ');
-    END LOOP;
+        LOOP
+            FETCH mvp_cur INTO mRpt;
+            EXIT WHEN mvp_cur%NOTFOUND;
+            
+            DBMS_OUTPUT.PUT_LINE('Player ID: ' || mRpt.playerid || ' ' || mRpt.lastname || ', '|| mRpt.firstname );
+            DBMS_OUTPUT.PUT_LINE('Team ID: ' || mRpt.teamid|| ' ' || mRpt.teamname );
+            DBMS_OUTPUT.PUT_LINE('Goals made: ' || mRpt.goalCt);
+            DBMS_OUTPUT.PUT_LINE(' ');
+        END LOOP;
     CLOSE mvp_cur;
 EXCEPTION
+   WHEN INVALID_CURSOR THEN 
+        exitcode := -8;
 	WHEN TOO_MANY_ROWS THEN 
         exitcode := -6;
     WHEN NO_DATA_FOUND THEN 
