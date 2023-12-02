@@ -7,7 +7,7 @@
         Ka Ying Chan    123231227
         Audrey Duzon    019153147
         
-    DATE: 2023-11-23
+    DATE: 2 DECEMBER 2023
 /***************************************
 
 /*
@@ -314,8 +314,6 @@ BEGIN
     END IF;
         
 EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        exitcode := -5;
     WHEN OTHERS THEN
         exitcode := -1;
 END spTeamsUpdate;
@@ -330,6 +328,7 @@ END;
 SELECT * FROM teams
 WHERE teamid = 600;
 -- TEST 2 - MODIFY NON-EXISTING DATA:
+/
 DECLARE exitcode NUMBER;
 BEGIN 
     spTeamsUpdate(666, 'BlackPink', 0, 'Black and Pink', exitcode);
@@ -351,8 +350,6 @@ BEGIN
     END IF;
 
 EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        exitcode := -5;
     WHEN OTHERS THEN
         exitcode := -1;
 END spTeamsDelete;
@@ -405,6 +402,10 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE('------------------------------');
     DBMS_OUTPUT.PUT_LINE('TEST 2:');
     spTeamsSelect(666, spRecord, exitcode);
+    DBMS_OUTPUT.PUT_LINE('Team id: ' || spRecord.teamid);
+    DBMS_OUTPUT.PUT_LINE('Team name: ' || spRecord.teamname);
+    DBMS_OUTPUT.PUT_LINE('Team isactive: ' || spRecord.isactive);
+    DBMS_OUTPUT.PUT_LINE('Team jersey colour: ' || spRecord.jerseycolour);
     DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
     DBMS_OUTPUT.PUT_LINE('------------------------------');
 END; 
@@ -436,7 +437,7 @@ BEGIN
     WHERE teamid = sp_teamid;
     
     IF playerExist = 0 OR teamExist = 0 THEN
-        exitcode := -2; -- Insert Error
+        exitcode := -5; -- No Data Found
         RETURN;
     END IF;
     
@@ -487,9 +488,11 @@ END;
 DECLARE exitcode INT;
 BEGIN spTeamsDelete(600, exitcode);
 END;
--- DELETE FROM rosters WHERE rosterid = 900;
 /
+DELETE FROM rosters WHERE rosterid = 900;
+
 -- START TESTING:
+/
 DECLARE 
     inputID rosters.rosterid%TYPE := 900;
     exitcode NUMBER;
@@ -501,6 +504,7 @@ END;
 SELECT * FROM rosters
 WHERE rosterid = 900;
 -- TEST - AUTONUMBER:
+/
 DECLARE 
     inputID rosters.rosterid%TYPE;
     exitcode NUMBER;
@@ -513,6 +517,7 @@ ROLLBACK;
 
 
 -- ROSTER UPDATE:
+/
 CREATE OR REPLACE PROCEDURE spRostersUpdate(
     sp_rosterid     IN          rosters.rosterid%TYPE,
     sp_playerid     IN          rosters.playerid%TYPE,
@@ -539,7 +544,7 @@ BEGIN
     WHERE teamid = sp_teamid;
     
     IF playerExist = 0 OR teamExist = 0 THEN
-        exitcode := -3; -- Update Error
+        exitcode := -5; -- No data found
         RETURN;
     END IF;
     
@@ -556,22 +561,27 @@ BEGIN
     END IF;
         
 EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        exitcode := -5;
     WHEN OTHERS THEN
         exitcode := -1;
 END spRostersUpdate;
 /
+
 -- TEST:
 DECLARE exitcode NUMBER;
 BEGIN 
-    spRostersUpdate(900, 1026, 626, 1, exitcode);
+    spRostersUpdate(900, 7, 600, 1, 99, exitcode);
     DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
 END;
 /
-SELECT * FROM teams
-WHERE teamid = 900;
-
+SELECT * FROM rosters
+WHERE rosterid = 900;
+-- TEST 2 modifying non-existing data:
+DECLARE exitcode NUMBER;
+BEGIN 
+    spRostersUpdate(900, 1026, 600, 1, 99, exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
+END;
+/
 
 -- ROSTER DELETE:
 CREATE OR REPLACE PROCEDURE spRostersDelete(
@@ -588,8 +598,6 @@ BEGIN
     END IF;
 
 EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        exitcode := -5;
     WHEN OTHERS THEN
         exitcode := -1;
 END spRostersDelete;
@@ -598,6 +606,8 @@ END spRostersDelete;
 DECLARE
     exitcode NUMBER;
 BEGIN
+    spRostersDelete(900, exitcode);
+    DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
     spRostersDelete(900, exitcode); -- TRY TO DELETE TWICE
     DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
 END; 
@@ -641,6 +651,11 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE('------------------------------');
     DBMS_OUTPUT.PUT_LINE('TEST 2:');
     spRostersSelect(901, spRecord, exitcode);
+    DBMS_OUTPUT.PUT_LINE('Roster id: ' || spRecord.rosterid);
+    DBMS_OUTPUT.PUT_LINE('Roster playerID: ' || spRecord.playerid);
+    DBMS_OUTPUT.PUT_LINE('Roster teamID: ' || spRecord.teamid);
+    DBMS_OUTPUT.PUT_LINE('Roster isactive: ' || spRecord.isactive);
+    DBMS_OUTPUT.PUT_LINE('Roster jersey number: ' || spRecord.jerseynumber);
     DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
     DBMS_OUTPUT.PUT_LINE('------------------------------');
 END; 
@@ -799,7 +814,7 @@ EXCEPTION
 END spPlayersSelectAll;
 /
 
--- spTeamsSelectAll CALL:
+-- spPlayersSelectAll CALL:
 DECLARE 
     exitcode     NUMBER;
     csPlayers   SYS_REFCURSOR;
@@ -861,7 +876,7 @@ END spTeamsSelectAll;
 
 -- spTeamsSelectAll CALL:
 DECLARE 
-    exitcode     NUMBER;
+    exitcode    NUMBER;
     csTeams     SYS_REFCURSOR;
     tRpt        teams%ROWTYPE;
     found       BOOLEAN := FALSE;
@@ -1167,7 +1182,6 @@ END;
 CREATE OR REPLACE VIEW vwSchedule AS
     SELECT
         g.gameid,
-        g.divid,
         g.gamenum,
         g.gamedatetime,
         g.hometeam,
@@ -1229,28 +1243,22 @@ EXCEPTION
 END spSchedUpcomingGames;
 /
 -- Q10 EXECUTE
--- TEST: DEFAULT
+-- TEST: 
 DECLARE exitcode INT;
 BEGIN 
-    spSchedUpcomingGames(6, exitcode);
+    DBMS_OUTPUT.PUT_LINE('*** TEST 1 ***');
+    spSchedUpcomingGames(30, exitcode); -- DEFAULT
+    DBMS_OUTPUT.PUT_LINE('Exitcode: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('');
+    DBMS_OUTPUT.PUT_LINE('*** TEST 2 ***');
+    spSchedUpcomingGames(-1,exitcode); -- USER INPUT NEGATIVE DAYS
+    DBMS_OUTPUT.PUT_LINE('Exitcode: ' || exitcode);
+    DBMS_OUTPUT.PUT_LINE('');
+    DBMS_OUTPUT.PUT_LINE('*** TEST 3 ***');
+    spSchedUpcomingGames(0,exitcode); -- USER INPUT 0
     DBMS_OUTPUT.PUT_LINE('Exitcode: ' || exitcode);
 END;
 /
--- TEST: USER INPUT - NEGATIVE DAYS
-DECLARE exitcode INT;
-BEGIN 
-    spSchedUpcomingGames(-1,exitcode);
-    DBMS_OUTPUT.PUT_LINE('Exitcode: ' || exitcode);
-END;
-/
--- TEST: USER INPUT - 0
-DECLARE exitcode INT;
-BEGIN 
-    spSchedUpcomingGames(0,exitcode);
-    DBMS_OUTPUT.PUT_LINE('Exitcode: ' || exitcode);
-END;
-/
-
 /*
 11.	Create a stored procedure, spSchedPastGames, 
     using DBMS_OUTPUT, that displays the games that have been played in the past n days, 
