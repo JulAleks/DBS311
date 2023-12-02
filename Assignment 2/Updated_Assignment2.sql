@@ -129,8 +129,6 @@ BEGIN
     END IF;
         
 EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        exitcode := -5;
     WHEN OTHERS THEN
         exitcode := -1;
 END spPlayersUpdate;
@@ -167,8 +165,6 @@ BEGIN
     END IF;
 
 EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        exitcode := -5;
     WHEN OTHERS THEN
         exitcode := -1;
 END spPlayersDelete;
@@ -206,7 +202,7 @@ EXCEPTION
         exitcode := -1;
 END spPlayersSelect;
 /
--- TEST: 
+-- TEST 1: 
 DECLARE
     spRecord players%ROWTYPE;
     exitcode NUMBER;
@@ -218,8 +214,19 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE('player regnumber: ' || spRecord.regnumber);
     DBMS_OUTPUT.PUT_LINE('player isactive: ' || spRecord.isactive);
     DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
-    
+END; 
+/
+-- TEST 2: 
+DECLARE
+    spRecord players%ROWTYPE;
+    exitcode NUMBER;
+BEGIN
     spPlayersSelect(987666, spRecord, exitcode);
+    DBMS_OUTPUT.PUT_LINE('player id: ' || spRecord.playerid);
+    DBMS_OUTPUT.PUT_LINE('player lastname: ' || spRecord.lastname);
+    DBMS_OUTPUT.PUT_LINE('player firstname: ' || spRecord.firstname);
+    DBMS_OUTPUT.PUT_LINE('player regnumber: ' || spRecord.regnumber);
+    DBMS_OUTPUT.PUT_LINE('player isactive: ' || spRecord.isactive);
     DBMS_OUTPUT.PUT_LINE('Exit code: ' || exitcode);
 END; 
 /
@@ -252,6 +259,9 @@ BEGIN
         sp_isactive, 
         sp_jerseycolour
         );
+    IF SQL%ROWCOUNT = 0 THEN
+        exitcode := -2;
+    END IF;
 EXCEPTION
     WHEN DUP_VAL_ON_INDEX THEN
         exitcode := -201; -- Insert an EXISTING id.
