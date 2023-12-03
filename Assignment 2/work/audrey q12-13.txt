@@ -1,0 +1,129 @@
+--v2 of question 12
+--create a temporary table tempStandings as per instructions
+CREATE TABLE tempStandings(
+    teamid NUMBER(38,0),
+    teamname VARCHAR2(10),
+    GP NUMBER,
+    W NUMBER,
+    L NUMBER,
+    T NUMBER,
+    PTS NUMBER,
+    GF NUMBER,
+    GA NUMBER,
+    GD NUMBER
+);
+--inserts rows into tempStandinfs table FROM select * from standings;
+--accepts a refcursor
+CREATE OR REPLACE PROCEDURE spRunStandings(stand_ref_cur IN OUT SYS_REFCURSOR) IS
+    teamid standings.theteamid%TYPE;
+    teamname standings.teamname%TYPE;
+    GP NUMBER;
+    W NUMBER;
+    L NUMBER;
+    T NUMBER;
+    PTS NUMBER;
+    GF NUMBER;
+    GA NUMBER;
+    GD NUMBER;
+BEGIN
+    OPEN stand_ref_cur FOR SELECT * FROM standings;
+    LOOP
+        FETCH stand_ref_cur INTO teamid, teamname, GP, W, L, T, PTS, GF, GA, GD;
+        EXIT WHEN stand_ref_cur%NOTFOUND;
+        INSERT INTO tempStandings VALUES (teamid, teamname, gp, w, l, t, pts, gf, ga, gd);
+    END LOOP;
+EXCEPTION
+	WHEN TOO_MANY_ROWS THEN DBMS_OUTPUT.PUT_LINE('You Query resulted in too many returned rows');
+	WHEN NO_DATA_FOUND THEN DBMS_OUTPUT.PUT_LINE('No data was returned by your query');
+    WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Error!');
+END;
+
+--execute:
+DECLARE
+    data_c SYS_REFCURSOR;
+BEGIN
+    OPEN data_c FOR SELECT * FROM standings;
+    spRunStandings(data_c);
+END;
+
+
+--v2 of q13
+--deletes old standings, inserts new data based on query supplied by Professor
+--deletes tempstanding after update of standings
+--calls spRunStandings(data_c); to update tempstandings
+
+CREATE OR REPLACE TRIGGER trgUpdateStnd
+AFTER UPDATE OR INSERT ON games
+DECLARE
+    data_c SYS_REFCURSOR;
+BEGIN
+    DELETE FROM standings;
+    INSERT INTO standings (
+    SELECT
+        TheTeamID,
+        (SELECT teamname FROM teams WHERE teamid = t.TheTeamID) AS teamname,
+        SUM(GamesPlayed) AS GP,
+        SUM(Wins) AS W,
+        SUM(Losses) AS L,
+        SUM(Ties) AS T,
+        SUM(Wins) * 3 + SUM(Ties) AS Pts,
+        SUM(GoalsFor) AS GF,
+        SUM(GoalsAgainst) AS GA,
+        SUM(GoalsFor) - SUM(GoalsAgainst) AS GD
+    FROM (
+        SELECT
+            hometeam AS TheTeamID,
+            COUNT(gameID) AS GamesPlayed,
+            SUM(homescore) AS GoalsFor,
+            SUM(visitscore) AS GoalsAgainst,
+            SUM(
+                CASE
+                    WHEN homescore > visitscore THEN 1
+                    ELSE 0
+                    END) AS Wins,
+            SUM(
+                CASE
+                    WHEN homescore < visitscore THEN 1
+                    ELSE 0
+                    END) AS Losses,
+            SUM(
+                CASE
+                    WHEN homescore = visitscore THEN 1
+                    ELSE 0
+                    END) AS Ties
+        FROM games
+        WHERE isPlayed = 1
+        GROUP BY hometeam
+        
+        UNION ALL
+        -- perspective of the visiting team     
+        SELECT
+            visitteam AS TheTeamID,
+            COUNT(gameID) AS GamesPlayed,
+            SUM(visitscore) AS GoalsFor,
+            SUM(homescore) AS GoalsAgainst,
+            SUM(
+                CASE
+                    WHEN homescore < visitscore THEN 1
+                    ELSE 0
+                    END) AS Wins,
+            SUM(
+                CASE
+                    WHEN homescore > visitscore THEN 1
+                    ELSE 0
+                    END) AS Losses,
+            SUM(
+                CASE
+                    WHEN homescore = visitscore THEN 1
+                    ELSE 0
+                    END) AS Ties
+        FROM games
+        WHERE isPlayed = 1
+        GROUP BY visitteam) t
+    GROUP BY TheTeamID    
+    );
+    DELETE tempstandings;
+    OPEN data_c FOR SELECT * FROM standings;
+    spRunStandings(data_c);
+END;
+

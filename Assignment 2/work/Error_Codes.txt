@@ -1,0 +1,13 @@
+   
+Exit code (Exit code):
+
+    Success                 : 0
+    Generic Error           : -1
+    Insert Error            : -2
+    Insert Existing ID      : -201
+    Update Error            : -3
+    Delete Error            : -4
+    No Data Found Error     : -5
+    Too Many Rows Eeturned  : -6
+    Invalid Input           : -7
+    Invalid Cursor          : -8
